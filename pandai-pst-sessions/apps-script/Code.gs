@@ -37,7 +37,11 @@ const HEADERS = [
   'Submitted At',
 ];
 
-/* ─── Entry point ────────────────────────────────────────────────── */
+/* ─── Entry points ───────────────────────────────────────────────── */
+function doGet() {
+  return respond(true, 'PST Sessions Apps Script is running. Submit data via POST.');
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
