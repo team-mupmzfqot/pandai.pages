@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pandai PST Sessions</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <div class="container">
+
+      <header class="form-header">
+        <div class="header-logo">
+          <img src="../assets/logo.png" alt="Pandai" onerror="this.style.display='none'" />
+        </div>
+        <h1>PST Sessions Registration</h1>
+        <p class="form-subtitle">Please fill in all required fields before submitting.</p>
+      </header>
+
+      <form id="pstForm" novalidate>
+
+        <!-- School Name -->
+        <div class="form-section">
+          <h2 class="section-title">Event Details</h2>
+
+          <div class="form-group">
+            <label for="schoolName">School Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="schoolName"
+              name="schoolName"
+              placeholder="e.g. SK Wangsa Maju"
+              autocomplete="off"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="eventTime">Time of Event <span class="required">*</span></label>
+              <input
+                type="datetime-local"
+                id="eventTime"
+                name="eventTime"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="eventLocation">Event Location <span class="required">*</span></label>
+              <input
+                type="text"
+                id="eventLocation"
+                name="eventLocation"
+                placeholder="e.g. Dewan Sekolah"
+                autocomplete="off"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="form-section">
+          <h2 class="section-title">Teachers Photos</h2>
+          <p class="section-hint">Upload up to <strong>10 photos</strong>. Teacher name fields will appear for each photo uploaded.</p>
+
+          <div class="upload-zone" id="uploadZone">
+            <input
+              type="file"
+              id="photoUpload"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+            />
+            <label for="photoUpload" class="upload-label">
+              <div class="upload-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+              </div>
+              <span class="upload-text">Click to upload or drag &amp; drop</span>
+              <span class="upload-hint">JPG, PNG, WEBP &bull; Max 10 photos</span>
+            </label>
+          </div>
+
+          <div id="uploadCounter" class="upload-counter hidden">
+            <span id="photoCount">0</span> / 10 photos selected
+          </div>
+
+          <div id="photoPreview" class="photo-grid"></div>
+        </div>
+
+        <!-- Teacher Names (dynamic) -->
+        <div id="teacherNamesSection" class="form-section hidden">
+          <h2 class="section-title">Teachers Names</h2>
+          <p class="section-hint">Enter the name of each teacher matching the photo above it.</p>
+          <div id="teacherNameFields" class="teacher-fields"></div>
+        </div>
+
+        <!-- Status / Progress -->
+        <div id="statusMessage" class="status-message hidden"></div>
+
+        <!-- Progress Bar -->
+        <div id="progressWrapper" class="progress-wrapper hidden">
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <div id="progressLabel" class="progress-label">Preparing…</div>
+        </div>
+
+        <div class="form-footer">
+          <button type="submit" id="submitBtn" class="btn-submit">
+            <span id="submitLabel">Submit</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
