@@ -51,7 +51,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
 
     if (data.action === 'upload_photo') {
-      const fileUrl = savePhotoToDrive(data.fileName, data.mimeType, data.base64Data);
+      const fileUrl = savePhotoToDrive(data.fileName, data.mimeType, data.base64Data, data.schoolName);
       return respond(true, 'Photo saved.', { fileUrl });
     }
 
@@ -70,16 +70,25 @@ function doPost(e) {
 }
 
 /* ─── Photo Upload ───────────────────────────────────────────────── */
-function savePhotoToDrive(fileName, mimeType, base64Data) {
+function savePhotoToDrive(fileName, mimeType, base64Data, schoolName) {
   const root       = getOrCreateFolder(FOLDER_NAME);
   const photosDir  = getOrCreateSubfolder(root, PHOTOS_FOLDER);
 
+  // Store photos in a sub-folder named after the school
+  const schoolFolder = getOrCreateSubfolder(photosDir, sanitizeFolderName(schoolName));
+
   const bytes = Utilities.base64Decode(base64Data);
   const blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
-  const file  = photosDir.createFile(blob);
+  const file  = schoolFolder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
   return 'https://drive.google.com/file/d/' + file.getId() + '/view';
+}
+
+function sanitizeFolderName(name) {
+  if (!name) return 'Unknown School';
+  // Trim, uppercase, replace characters unsafe in folder names
+  return name.trim().toUpperCase().replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, ' ');
 }
 
 /* ─── Sheet Append ───────────────────────────────────────────────── */

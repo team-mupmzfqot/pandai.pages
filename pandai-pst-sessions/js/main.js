@@ -305,12 +305,13 @@ async function callAppsScript(payload) {
   return data;
 }
 
-async function uploadPhotoToDrive(fileName, mimeType, base64Data) {
+async function uploadPhotoToDrive(fileName, mimeType, base64Data, schoolName) {
   const result = await callAppsScript({
-    action:   'upload_photo',
+    action: 'upload_photo',
     fileName,
     mimeType,
     base64Data,
+    schoolName,
   });
   return result.fileUrl;
 }
@@ -389,7 +390,7 @@ pstForm.addEventListener('submit', async (e) => {
       setProgress(percent, `Uploading photo ${i + 1} of ${uploadedFiles.length}: ${fileName}`);
 
       const base64 = dataUrlToBase64(dataUrl);
-      const url    = await uploadPhotoToDrive(fileName, file.type || 'image/jpeg', base64);
+      const url    = await uploadPhotoToDrive(fileName, file.type || 'image/jpeg', base64, schoolName);
 
       photoUrls.push(url);
       fileNames.push(fileName);
