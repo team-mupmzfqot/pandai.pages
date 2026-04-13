@@ -2,6 +2,7 @@
 const MAX_PHOTOS = 10;
 let uploadedFiles   = [];   // { file: File, dataUrl: string }[]
 let isSubmitting    = false;
+let dragSrcIndex    = null;
 
 /* ─── DOM Refs ───────────────────────────────────────────────────── */
 const photoUpload          = document.getElementById('photoUpload');
@@ -93,19 +94,80 @@ function renderPreviews() {
   uploadedFiles.forEach(({ file, dataUrl }, index) => {
     const card = document.createElement('div');
     card.className = 'photo-card';
+    card.draggable = true;
+    card.dataset.index = index;
     card.innerHTML = `
-      <img src="${dataUrl}" alt="Photo ${index + 1}" />
+      <img src="${dataUrl}" alt="Photo ${index + 1}" draggable="false" />
       <span class="photo-badge">${index + 1}</span>
+      <div class="drag-handle" title="Drag to reorder">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 4a1 1 0 000 2 1 1 0 000-2zm6 0a1 1 0 000 2 1 1 0 000-2zM7 9a1 1 0 000 2 1 1 0 000-2zm6 0a1 1 0 000 2 1 1 0 000-2zM7 14a1 1 0 000 2 1 1 0 000-2zm6 0a1 1 0 000 2 1 1 0 000-2z"/></svg>
+      </div>
       <button type="button" class="photo-remove" onclick="removeFile(${index})" title="Remove">&times;</button>
       <div class="photo-filename">${file.name}</div>
     `;
+
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragover',  onDragOver);
+    card.addEventListener('dragleave', onDragLeave);
+    card.addEventListener('drop',      onDrop);
+    card.addEventListener('dragend',   onDragEnd);
+
     photoPreview.appendChild(card);
   });
 }
 
-function renderTeacherFields() {
-  // Preserve existing name values keyed by original index position
-  const existingValues = Array.from(
+/* ─── Drag-to-Reorder ────────────────────────────────────────────── */
+function onDragStart(e) {
+  dragSrcIndex = parseInt(this.dataset.index);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const target = e.currentTarget;
+  if (parseInt(target.dataset.index) !== dragSrcIndex) {
+    target.classList.add('drop-target');
+  }
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drop-target');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const destIndex = parseInt(e.currentTarget.dataset.index);
+  if (dragSrcIndex === null || dragSrcIndex === destIndex) return;
+
+  // Capture current teacher name values before re-render
+  const names = getTeacherNames();
+
+  // Reorder files array
+  const moved = uploadedFiles.splice(dragSrcIndex, 1)[0];
+  uploadedFiles.splice(destIndex, 0, moved);
+
+  // Reorder names to match
+  const movedName = names.splice(dragSrcIndex, 1)[0];
+  names.splice(destIndex, 0, movedName);
+
+  renderPreviews();
+  renderTeacherFields(names);
+  updateCounter();
+}
+
+function onDragEnd() {
+  dragSrcIndex = null;
+  document.querySelectorAll('.photo-card').forEach(c => {
+    c.classList.remove('dragging', 'drop-target');
+  });
+}
+
+function renderTeacherFields(preorderedNames) {
+  // Use provided names (from a reorder) or read current input values
+  const existingValues = preorderedNames || Array.from(
     teacherNameFields.querySelectorAll('.teacher-name-input')
   ).map(inp => inp.value.trim());
 
