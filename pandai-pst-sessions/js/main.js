@@ -23,6 +23,9 @@ const submitLabel          = document.getElementById('submitLabel');
 /* ─── File Selection ─────────────────────────────────────────────── */
 photoUpload.addEventListener('change', handleFileSelect);
 
+// Allow cards to be dropped anywhere within the grid
+photoPreview.addEventListener('dragover', e => e.preventDefault());
+
 uploadZone.addEventListener('dragover', (e) => {
   e.preventDefault();
   uploadZone.classList.add('drag-over');
@@ -118,22 +121,29 @@ function renderPreviews() {
 
 /* ─── Drag-to-Reorder ────────────────────────────────────────────── */
 function onDragStart(e) {
-  dragSrcIndex = parseInt(this.dataset.index);
-  this.classList.add('dragging');
+  dragSrcIndex = parseInt(e.currentTarget.dataset.index);
+  // setData is required by Firefox for drag to initiate
+  e.dataTransfer.setData('text/plain', String(dragSrcIndex));
   e.dataTransfer.effectAllowed = 'move';
+  // Slight delay so the card doesn't look faded before the ghost image is captured
+  requestAnimationFrame(() => e.currentTarget.classList.add('dragging'));
 }
 
 function onDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  const target = e.currentTarget;
-  if (parseInt(target.dataset.index) !== dragSrcIndex) {
-    target.classList.add('drop-target');
+  const card = e.currentTarget;
+  if (parseInt(card.dataset.index) !== dragSrcIndex) {
+    card.classList.add('drop-target');
   }
 }
 
 function onDragLeave(e) {
-  e.currentTarget.classList.remove('drop-target');
+  // relatedTarget is where the pointer went — if it's still inside this card
+  // (e.g. moved over a child element) we don't want to remove the highlight
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drop-target');
+  }
 }
 
 function onDrop(e) {
@@ -153,13 +163,15 @@ function onDrop(e) {
   const movedName = names.splice(dragSrcIndex, 1)[0];
   names.splice(destIndex, 0, movedName);
 
+  dragSrcIndex = null;
   renderPreviews();
   renderTeacherFields(names);
   updateCounter();
 }
 
-function onDragEnd() {
+function onDragEnd(e) {
   dragSrcIndex = null;
+  // Clean up all cards in case drop fired on a non-card target
   document.querySelectorAll('.photo-card').forEach(c => {
     c.classList.remove('dragging', 'drop-target');
   });

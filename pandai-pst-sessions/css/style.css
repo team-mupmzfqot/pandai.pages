@@ -250,10 +250,22 @@ input[type="text"]::placeholder {
   aspect-ratio: 1;
   cursor: grab;
   transition: opacity .2s, box-shadow .2s, border-color .2s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent child elements from blocking cursor/drag */
+.photo-card * {
+  pointer-events: none;
+}
+
+/* Re-enable pointer events only on the remove button */
+.photo-card .photo-remove {
+  pointer-events: auto;
 }
 
 .photo-card.dragging {
-  opacity: .4;
+  opacity: .35;
   cursor: grabbing;
 }
 
