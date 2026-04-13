@@ -357,10 +357,11 @@ pstForm.addEventListener('submit', async (e) => {
   hideStatus();
   hideProgress();
 
-  const schoolName    = document.getElementById('schoolName').value.trim();
-  const eventTime     = document.getElementById('eventTime').value;
-  const eventLocation = document.getElementById('eventLocation').value.trim();
-  const teacherNames  = getTeacherNames();
+  const schoolName        = document.getElementById('schoolName').value.trim();
+  const eventTime         = document.getElementById('eventTime').value;
+  const eventLocation     = document.getElementById('eventLocation').value.trim();
+  const onlineSessionDate = document.getElementById('onlineSessionDate').value;
+  const teacherNames      = getTeacherNames();
 
   /* ── Client-side validation ── */
   if (!schoolName) {
@@ -388,6 +389,12 @@ pstForm.addEventListener('submit', async (e) => {
   if (!eventLocation) {
     showStatus('Please enter the event location.', 'error');
     document.getElementById('eventLocation').focus();
+    return;
+  }
+
+  if (!onlineSessionDate) {
+    showStatus('Please select the online session date.', 'error');
+    document.getElementById('onlineSessionDate').focus();
     return;
   }
 
@@ -433,6 +440,7 @@ pstForm.addEventListener('submit', async (e) => {
       photoUrls,
       eventTime,
       eventLocation,
+      onlineSessionDate,
       submittedAt: new Date().toISOString(),
     });
 
