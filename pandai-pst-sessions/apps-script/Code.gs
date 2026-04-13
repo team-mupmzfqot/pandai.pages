@@ -116,6 +116,12 @@ function appendRow(data) {
   const lastRow = sheet.getLastRow() + 1;
   sheet.appendRow(row);
 
+  // Centre-align the entire new row
+  const TOTAL_COLS = 5 + MAX_TEACHERS * 2 + 1;
+  sheet.getRange(lastRow, 1, 1, TOTAL_COLS)
+       .setHorizontalAlignment('center')
+       .setVerticalAlignment('middle');
+
   // Make photo URL cells into clickable hyperlinks
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
