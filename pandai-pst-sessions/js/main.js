@@ -290,63 +290,33 @@ function setSubmitting(state) {
   submitLabel.textContent = state ? 'Submitting…' : 'Submit';
 }
 
-/* ─── GitHub Upload ──────────────────────────────────────────────── */
-async function uploadToGitHub(fileName, base64Content) {
-  const path = `${CONFIG.GITHUB_UPLOAD_PATH}/${fileName}`;
-  const url  = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
-
-  const headers = {
-    Authorization: `Bearer ${CONFIG.GITHUB_TOKEN}`,
-    Accept:        'application/vnd.github+json',
-    'Content-Type': 'application/json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
-
-  const body = {
-    message: `Upload PST photo: ${fileName}`,
-    content: base64Content,
-  };
-
-  // If the file already exists we need its SHA to update it
-  const checkRes = await fetch(url, { headers });
-  if (checkRes.ok) {
-    const existing = await checkRes.json();
-    body.sha = existing.sha;
-  }
-
-  const res = await fetch(url, {
-    method:  'PUT',
-    headers,
-    body:    JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(`GitHub upload failed for "${fileName}": ${err.message || res.status}`);
-  }
-
-  const data = await res.json();
-  return data.content.download_url;
-}
-
-/* ─── Google Sheets via Apps Script ─────────────────────────────── */
-async function submitToSheets(payload) {
+/* ─── Apps Script: photo upload + sheet submit ───────────────────── */
+async function callAppsScript(payload) {
   const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
     method:  'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body:    JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error(`Google Sheets submission failed (HTTP ${res.status})`);
-  }
+  if (!res.ok) throw new Error(`Apps Script request failed (HTTP ${res.status})`);
 
   const data = await res.json();
-  if (!data.success) {
-    throw new Error(data.error || 'Apps Script returned an error.');
-  }
-
+  if (!data.success) throw new Error(data.error || 'Apps Script returned an error.');
   return data;
+}
+
+async function uploadPhotoToDrive(fileName, mimeType, base64Data) {
+  const result = await callAppsScript({
+    action:   'upload_photo',
+    fileName,
+    mimeType,
+    base64Data,
+  });
+  return result.fileUrl;
+}
+
+async function submitToSheets(payload) {
+  return callAppsScript({ action: 'submit_form', ...payload });
 }
 
 /* ─── Form Submission ────────────────────────────────────────────── */
@@ -398,11 +368,6 @@ pstForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (!CONFIG.GITHUB_TOKEN || CONFIG.GITHUB_TOKEN === 'YOUR_GITHUB_PAT_HERE') {
-    showStatus('GitHub token not configured. Please update js/config.js.', 'error');
-    return;
-  }
-
   if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
     showStatus('Google Apps Script URL not configured. Please update js/config.js.', 'error');
     return;
@@ -420,11 +385,11 @@ pstForm.addEventListener('submit', async (e) => {
       const teacherName = teacherNames[i];
       const fileName    = buildFileName(schoolName, teacherName, i, file);
 
-      const percent = Math.round(((i) / uploadedFiles.length) * 80);
+      const percent = Math.round((i / uploadedFiles.length) * 80);
       setProgress(percent, `Uploading photo ${i + 1} of ${uploadedFiles.length}: ${fileName}`);
 
       const base64 = dataUrlToBase64(dataUrl);
-      const url    = await uploadToGitHub(fileName, base64);
+      const url    = await uploadPhotoToDrive(fileName, file.type || 'image/jpeg', base64);
 
       photoUrls.push(url);
       fileNames.push(fileName);

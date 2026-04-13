@@ -13,16 +13,21 @@
  * 5. Copy the Web App URL
  * 6. Paste it into  pandai-pst-sessions/js/config.js  →  APPS_SCRIPT_URL
  *
- * What this script does on first run:
- *   • Creates a folder called "PST-Sheets" in your Google Drive root
- *   • Creates a spreadsheet called "PST Sessions" inside that folder
- *   • Adds column headers to the sheet
- *   • Every subsequent form submission appends one row
+ * What this script does:
+ *   action = "upload_photo" → saves a base64-encoded image to Google Drive
+ *                             (PST-Sheets/Photos/) and returns its URL
+ *   action = "submit_form"  → appends one row to the PST Sessions spreadsheet
+ *
+ * On first "submit_form" call the script auto-creates:
+ *   • A folder called "PST-Sheets" in your Google Drive root
+ *   • A sub-folder "Photos" for uploaded images
+ *   • A spreadsheet "PST Sessions" with styled headers
  */
 
 /* ─── Config ─────────────────────────────────────────────────────── */
-const FOLDER_NAME = 'PST-Sheets';
-const SHEET_NAME  = 'PST Sessions';
+const FOLDER_NAME  = 'PST-Sheets';
+const PHOTOS_FOLDER = 'Photos';
+const SHEET_NAME   = 'PST Sessions';
 
 const HEADERS = [
   'Timestamp',
@@ -44,30 +49,24 @@ function doGet() {
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(15000);
-  } catch (_) {
+  try { lock.waitLock(15000); } catch (_) {
     return respond(false, 'Could not acquire lock — please try again.');
   }
 
   try {
-    const data   = JSON.parse(e.postData.contents);
-    const sheet  = getOrCreateSheet();
+    const data = JSON.parse(e.postData.contents);
 
-    sheet.appendRow([
-      new Date(),                                    // Timestamp (auto)
-      data.schoolName         || '',
-      data.eventTime          || '',
-      data.eventLocation      || '',
-      data.onlineSessionDate  || '',
-      (data.teacherNames || []).length,
-      (data.teacherNames || []).join(', '),
-      (data.fileNames    || []).join(', '),
-      (data.photoUrls    || []).join('\n'),           // one URL per line
-      data.submittedAt        || '',
-    ]);
+    if (data.action === 'upload_photo') {
+      const fileUrl = savePhotoToDrive(data.fileName, data.mimeType, data.base64Data);
+      return respond(true, 'Photo saved.', { fileUrl });
+    }
 
-    return respond(true, 'Row saved successfully.');
+    if (data.action === 'submit_form') {
+      appendRow(data);
+      return respond(true, 'Row saved successfully.');
+    }
+
+    return respond(false, 'Unknown action.');
 
   } catch (err) {
     return respond(false, err.toString());
@@ -76,12 +75,50 @@ function doPost(e) {
   }
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────── */
+/* ─── Photo Upload ───────────────────────────────────────────────── */
+function savePhotoToDrive(fileName, mimeType, base64Data) {
+  const root        = getOrCreateFolder(FOLDER_NAME);
+  const photosDir   = getOrCreateSubfolder(root, PHOTOS_FOLDER);
 
-/**
- * Returns the target sheet, creating the Drive folder, spreadsheet,
- * and header row if they do not yet exist.
- */
+  const bytes = Utilities.base64Decode(base64Data);
+  const blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
+  const file  = photosDir.createFile(blob);
+
+  // Make the file viewable by anyone with the link
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return 'https://drive.google.com/file/d/' + file.getId() + '/view';
+}
+
+/* ─── Sheet Append ───────────────────────────────────────────────── */
+function appendRow(data) {
+  const sheet = getOrCreateSheet();
+  sheet.appendRow([
+    new Date(),
+    data.schoolName         || '',
+    data.eventTime          || '',
+    data.eventLocation      || '',
+    data.onlineSessionDate  || '',
+    (data.teacherNames || []).length,
+    (data.teacherNames || []).join(', '),
+    (data.fileNames    || []).join(', '),
+    (data.photoUrls    || []).join('\n'),
+    data.submittedAt        || '',
+  ]);
+}
+
+/* ─── Drive Helpers ──────────────────────────────────────────────── */
+function getOrCreateFolder(name) {
+  const folders = DriveApp.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(name);
+}
+
+function getOrCreateSubfolder(parent, name) {
+  const folders = parent.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : parent.createFolder(name);
+}
+
+/* ─── Sheet Helper ───────────────────────────────────────────────── */
 function getOrCreateSheet() {
   const folder = getOrCreateFolder(FOLDER_NAME);
   const files  = folder.getFilesByName(SHEET_NAME);
@@ -91,18 +128,15 @@ function getOrCreateSheet() {
     ss = SpreadsheetApp.open(files.next());
   } else {
     ss = SpreadsheetApp.create(SHEET_NAME);
-    // Move the newly created file into PST-Sheets
     const file = DriveApp.getFileById(ss.getId());
     folder.addFile(file);
-    DriveApp.getRootFolder().removeFile(file);   // remove from root
+    DriveApp.getRootFolder().removeFile(file);
 
-    // Write headers
     const sheet = ss.getActiveSheet();
     sheet.setName('Submissions');
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
 
-    // Style the header row
     const headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
     headerRange.setBackground('#4f46e5');
     headerRange.setFontColor('#ffffff');
@@ -112,22 +146,10 @@ function getOrCreateSheet() {
   return ss.getSheetByName('Submissions') || ss.getActiveSheet();
 }
 
-/**
- * Finds the first Drive folder with `name` in the root,
- * or creates it if it does not exist.
- */
-function getOrCreateFolder(name) {
-  const folders = DriveApp.getFoldersByName(name);
-  if (folders.hasNext()) return folders.next();
-  return DriveApp.createFolder(name);
-}
-
-/**
- * Builds a JSON ContentService response with CORS headers.
- */
-function respond(success, message) {
-  const payload = JSON.stringify({ success, message });
+/* ─── Response Helper ────────────────────────────────────────────── */
+function respond(success, message, extra) {
+  const payload = Object.assign({ success, message }, extra || {});
   return ContentService
-    .createTextOutput(payload)
+    .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
