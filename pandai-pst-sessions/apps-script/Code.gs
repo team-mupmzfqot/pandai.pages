@@ -644,7 +644,7 @@ function exportDesign(designId, accessToken) {
       'Authorization': 'Bearer ' + accessToken,
       'Content-Type':  'application/json',
     },
-    payload:            JSON.stringify({ design_id: designId, format: 'png' }),
+    payload:            JSON.stringify({ design_id: designId, format: { type: 'png' } }),
     muteHttpExceptions: true,
   });
 
