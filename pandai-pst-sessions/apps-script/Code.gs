@@ -529,16 +529,16 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
 
   Logger.log('[upload] file=' + fileName + ' mime=' + mime + ' meta=' + metaHeader);
 
-  // Pass blob directly (not bytes array) so UrlFetchApp doesn't inject its own
-  // Content-Type default alongside ours — Content-Type lives only in headers.
+  // Use contentType option (not headers) with application/octet-stream so UrlFetchApp
+  // sends exactly one Content-Type header without overriding from the blob's own type.
   const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
-    method:  'POST',
+    method:      'POST',
+    contentType: 'application/octet-stream',
     headers: {
       'Authorization':         'Bearer ' + accessToken,
-      'Content-Type':          mime,
       'Asset-Upload-Metadata': metaHeader,
     },
-    payload:            blob,
+    payload:            blob.getBytes(),
     muteHttpExceptions: true,
   });
 
@@ -546,7 +546,7 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
 
   const uploadData = JSON.parse(uploadRes.getContentText());
   if (!uploadData.asset || !uploadData.asset.id) {
-    throw new Error('Asset upload failed: ' + uploadRes.getContentText());
+    throw new Error('Asset upload failed [mime=' + mime + ']: ' + uploadRes.getContentText());
   }
 
   // Poll GET /assets/{id} until import_status.state === 'success'
