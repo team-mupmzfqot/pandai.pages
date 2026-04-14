@@ -528,7 +528,7 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
     method: 'POST',
     headers: {
       'Authorization':         'Bearer ' + accessToken,
-      'Content-Type':          mime,
+      'Content-Type':          'application/octet-stream',
       'Asset-Upload-Metadata': metaHeader,
     },
     payload:            bytes,
