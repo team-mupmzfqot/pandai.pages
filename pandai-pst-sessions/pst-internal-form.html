@@ -123,15 +123,42 @@
           <div id="progressLabel" class="progress-label">Preparing…</div>
         </div>
 
-        <div class="form-footer">
+        <div class="form-footer" id="formFooter">
+
+          <!-- Pre-submission -->
           <button type="submit" id="submitBtn" class="btn-submit">
             <span id="submitLabel">Submit</span>
           </button>
+
+          <!-- Post-submission (hidden until submit succeeds) -->
+          <button type="button" id="newSubmissionBtn" class="btn-new-submission hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            New Submission
+          </button>
+
+          <div id="postSubmitActions" class="post-submit-actions hidden">
+            <a id="btnSheet" href="#" target="_blank" rel="noopener" class="btn-sheet">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+              </svg>
+              Check Data Sheet
+            </a>
+            <button type="button" class="btn-poster" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              Generate Poster
+              <span class="badge-soon">SOON</span>
+            </button>
+          </div>
+
         </div>
 
       </form>
 
-      <!-- Success Card (shown after submission) -->
+      <!-- Success Card (shown after submission, fades out after 6 s) -->
       <div id="successCard" class="success-card hidden">
         <button type="button" id="successClose" class="success-close" title="Close">&times;</button>
         <div class="success-gif-frame">
@@ -143,21 +170,6 @@
         <h3>Submission Successful!</h3>
         <p id="successSummary">Your data has been saved to Google Sheets.</p>
         <div class="countdown-bar"><div id="countdownFill" class="countdown-fill"></div></div>
-        <div class="success-actions">
-          <a id="btnSheet" href="#" target="_blank" rel="noopener" class="btn-sheet">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
-            </svg>
-            Check Data Sheet
-          </a>
-          <button type="button" class="btn-poster" disabled>
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            Generate Poster
-            <span class="badge-soon">SOON</span>
-          </button>
-        </div>
       </div>
 
     </div>

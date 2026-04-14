@@ -19,13 +19,22 @@ const progressFill         = document.getElementById('progressFill');
 const progressLabel        = document.getElementById('progressLabel');
 const submitBtn            = document.getElementById('submitBtn');
 const submitLabel          = document.getElementById('submitLabel');
+const formFooter           = document.getElementById('formFooter');
+const newSubmissionBtn     = document.getElementById('newSubmissionBtn');
+const postSubmitActions    = document.getElementById('postSubmitActions');
+const btnSheet             = document.getElementById('btnSheet');
 const successCard          = document.getElementById('successCard');
 const successClose         = document.getElementById('successClose');
-const btnSheet             = document.getElementById('btnSheet');
 const successSummary       = document.getElementById('successSummary');
 const countdownFill        = document.getElementById('countdownFill');
 
 let successDismissTimer = null;
+
+newSubmissionBtn.addEventListener('click', () => {
+  if (window.confirm('Start a new submission? The page will reload and the form will be reset.')) {
+    window.location.reload();
+  }
+});
 
 function showSuccessCard() {
   successCard.classList.remove('hidden', 'fading-out');
@@ -488,6 +497,12 @@ pstForm.addEventListener('submit', async (e) => {
       btnSheet.style.pointerEvents = 'none';
       btnSheet.style.opacity = '0.5';
     }
+
+    /* ── Swap footer: Submit → New Submission + action buttons ── */
+    submitBtn.classList.add('hidden');
+    newSubmissionBtn.classList.remove('hidden');
+    postSubmitActions.classList.remove('hidden');
+    formFooter.classList.add('post-submit');
 
     showSuccessCard();
     successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -554,7 +554,14 @@ input[type="text"]::placeholder {
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.form-footer.post-submit {
+  justify-content: space-between;
 }
 
 .btn-submit {
@@ -579,6 +586,35 @@ input[type="text"]::placeholder {
 
 .btn-submit:active:not(:disabled) { transform: scale(.98); }
 .btn-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+.btn-new-submission {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: .85rem 1.5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.btn-new-submission:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+  background: var(--green-light);
+}
+
+.post-submit-actions {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
 
 /* ─── Success Card ──────────────────────────────────────────────── */
 @keyframes successFadeIn {
@@ -690,13 +726,6 @@ input[type="text"]::placeholder {
   width: 0%;
 }
 
-.success-actions {
-  display: flex;
-  gap: .6rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
 .btn-sheet {
   display: inline-flex;
   align-items: center;
@@ -704,9 +733,9 @@ input[type="text"]::placeholder {
   background: var(--green-light);
   border: 1.5px solid var(--green);
   color: var(--green-dark);
-  padding: .55rem 1rem;
-  border-radius: var(--radius-xs);
-  font-size: .8rem;
+  padding: .75rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-size: .875rem;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
@@ -725,8 +754,8 @@ input[type="text"]::placeholder {
   background: linear-gradient(135deg, var(--green-teal) 0%, var(--green-deep) 100%);
   border: none;
   color: #fff;
-  padding: .55rem 1rem;
-  border-radius: var(--radius-xs);
+  padding: .75rem 1.1rem;
+  border-radius: var(--radius-sm);
   font-size: .8rem;
   font-weight: 700;
   cursor: pointer;
