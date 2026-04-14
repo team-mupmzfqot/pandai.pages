@@ -666,11 +666,10 @@ function pollExportJob(exportJobId, accessToken) {
     const result = JSON.parse(lastBody);
     const job    = result.job;
     if (job && job.status === 'success') {
+      // Canva returns URLs directly on job.urls (not job.result.urls)
       const r = job.result || {};
-      // Try all known field names Canva may use for the download URLs
-      const list = r.download_list || r.urls || r.export_blobs || [];
+      const list = job.urls || r.download_list || r.urls || r.export_blobs || [];
       if (list && list.length) {
-        // Items may be plain URL strings or objects with a .url property
         return list.map(function(d) { return (typeof d === 'string') ? d : d.url; });
       }
       throw new Error('Export succeeded but no download URLs found. Full response: ' + lastBody);
