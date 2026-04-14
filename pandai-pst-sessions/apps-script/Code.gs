@@ -268,13 +268,9 @@ function buildSheetStructure(sheet) {
     'Online Session Date',
     'Sub Text Poster',
   ];
+  // Teacher columns: group header already says "Teacher N", so keep sub-headers short
   for (let i = 1; i <= MAX_TEACHERS; i++) {
-    colHeaders.push(
-      `Teacher ${i} Name`,
-      `Teacher ${i} Position`,
-      `Teacher ${i} Title`,
-      `Teacher ${i} Photo`
-    );
+    colHeaders.push('Name', 'Position', 'Title', 'Photo');
   }
   colHeaders.push('Poster Link'); // col 7 — no Submitted At (Timestamp already covers it)
 
@@ -304,10 +300,10 @@ function buildSheetStructure(sheet) {
   sheet.setColumnWidth(6, 220);  // Sub Text Poster
   sheet.setColumnWidth(7, 200);  // Poster Link
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(8 + i * 4,     160);  // Teacher Name
-    sheet.setColumnWidth(8 + i * 4 + 1, 160);  // Teacher Position
-    sheet.setColumnWidth(8 + i * 4 + 2, 140);  // Teacher Title
-    sheet.setColumnWidth(8 + i * 4 + 3, 110);  // Teacher Photo
+    sheet.setColumnWidth(8 + i * 4,     150);  // Name
+    sheet.setColumnWidth(8 + i * 4 + 1, 180);  // Position (can be long)
+    sheet.setColumnWidth(8 + i * 4 + 2,  80);  // Title (short: Cikgu, Dr.)
+    sheet.setColumnWidth(8 + i * 4 + 3,  90);  // Photo
   }
 
   /* ── Row heights ── */
