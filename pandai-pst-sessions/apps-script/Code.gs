@@ -654,23 +654,30 @@ function exportDesign(designId, accessToken) {
 }
 
 function pollExportJob(exportJobId, accessToken) {
+  let lastBody = '';
   for (let i = 0; i < 30; i++) {
     Utilities.sleep(3000);
     const res    = UrlFetchApp.fetch(CANVA_API_BASE + '/exports/' + exportJobId, {
       headers: { 'Authorization': 'Bearer ' + accessToken },
       muteHttpExceptions: true,
     });
-    const result = JSON.parse(res.getContentText());
+    lastBody = res.getContentText();
+    Logger.log('[export poll ' + i + '] ' + lastBody);
+    const result = JSON.parse(lastBody);
     const job    = result.job;
     if (job && job.status === 'success') {
-      // API returns job.result.download_list[].url
-      const list = job.result && job.result.download_list;
-      if (list && list.length) return list.map(function(d) { return d.url; });
-      throw new Error('Export succeeded but no download URLs returned.');
+      const r = job.result || {};
+      // Try all known field names Canva may use for the download URLs
+      const list = r.download_list || r.urls || r.export_blobs || [];
+      if (list && list.length) {
+        // Items may be plain URL strings or objects with a .url property
+        return list.map(function(d) { return (typeof d === 'string') ? d : d.url; });
+      }
+      throw new Error('Export succeeded but no download URLs found. Full response: ' + lastBody);
     }
-    if (job && job.status === 'failed') throw new Error('Export job failed.');
+    if (job && job.status === 'failed') throw new Error('Export job failed: ' + lastBody);
   }
-  throw new Error('Export job timed out.');
+  throw new Error('Export job timed out. Last: ' + lastBody);
 }
 
 /* ─── Date / Time Formatting ─────────────────────────────────────── */
