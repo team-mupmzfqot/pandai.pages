@@ -345,6 +345,17 @@ function generateCodeChallenge(verifier) {
 }
 
 /* ─── OAuth ──────────────────────────────────────────────────────── */
+
+/**
+ * Returns the pinned redirect URI from Script Properties.
+ * Set Script Property CANVA_REDIRECT_URI to the exact /exec URL registered in Canva.
+ * Falls back to ScriptApp URL if not set.
+ */
+function getRedirectUri() {
+  const props = PropertiesService.getScriptProperties();
+  return props.getProperty('CANVA_REDIRECT_URI') || ScriptApp.getService().getUrl();
+}
+
 function getCanvaAuthUrl() {
   const props        = PropertiesService.getScriptProperties();
   const state        = Utilities.getUuid();
@@ -354,7 +365,7 @@ function getCanvaAuthUrl() {
   props.setProperty('CANVA_CODE_VERIFIER',       codeVerifier);
 
   const codeChallenge = generateCodeChallenge(codeVerifier);
-  const redirectUri   = ScriptApp.getService().getUrl();
+  const redirectUri   = getRedirectUri();
   const params = [
     'client_id='              + encodeURIComponent(CANVA_CLIENT_ID),
     'response_type=code',
@@ -380,7 +391,7 @@ function handleCanvaOAuthCallback(e) {
 
   const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
   const codeVerifier = props.getProperty('CANVA_CODE_VERIFIER');
-  const redirectUri  = ScriptApp.getService().getUrl();
+  const redirectUri  = getRedirectUri();
 
   const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
     method: 'POST',
@@ -475,8 +486,9 @@ function setupCanvaCredentials() {
  * Copy the logged URL and paste it into Canva Developer Portal → OAuth Redirect URIs.
  */
 function logRedirectUri() {
-  Logger.log('Redirect URI: ' + ScriptApp.getService().getUrl());
-  Logger.log('Auth URL: ' + getCanvaAuthUrl());
+  Logger.log('ScriptApp URL:  ' + ScriptApp.getService().getUrl());
+  Logger.log('Pinned URI:     ' + getRedirectUri());
+  Logger.log('Auth URL: '       + getCanvaAuthUrl());
 }
 
 /* ─── Asset Upload ───────────────────────────────────────────────── */
