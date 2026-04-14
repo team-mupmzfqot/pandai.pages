@@ -35,7 +35,7 @@ const CANVA_CLIENT_ID = 'OC-AZ2GORzqxtRC';
 const CANVA_API_BASE  = 'https://api.canva.com/rest/v1';
 const CANVA_AUTH_URL  = 'https://www.canva.com/api/oauth/authorize';
 const CANVA_TOKEN_URL = 'https://api.canva.com/rest/v1/oauth/token';
-const CANVA_SCOPE     = 'asset:write design:content:write brandtemplate:content:read';
+const CANVA_SCOPE     = 'asset:write asset:read design:content:write brandtemplate:content:read';
 
 // Brand Template IDs by teacher count — add IDs as templates are created in Canva
 const CANVA_TEMPLATES = {
@@ -502,6 +502,18 @@ function setupCanvaCredentials() {
   PropertiesService.getScriptProperties()
     .setProperty('CANVA_CLIENT_SECRET', 'PASTE_YOUR_CANVA_CLIENT_SECRET_HERE');
   Logger.log('✓ Canva client secret saved. Remove the value from code now.');
+}
+
+/**
+ * Run this in the Apps Script editor to clear stored Canva tokens.
+ * Required after adding new OAuth scopes — forces re-authorization next Generate Poster click.
+ */
+function clearCanvaTokens() {
+  const props = PropertiesService.getScriptProperties();
+  props.deleteProperty('CANVA_ACCESS_TOKEN');
+  props.deleteProperty('CANVA_REFRESH_TOKEN');
+  props.deleteProperty('CANVA_TOKEN_EXPIRY');
+  Logger.log('✓ Canva tokens cleared. Re-authorization will be required.');
 }
 
 /**
