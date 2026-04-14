@@ -613,17 +613,27 @@ function createAutofillJob(brandTemplateId, fieldData, accessToken) {
 }
 
 function pollAutofillJob(jobId, accessToken) {
+  let lastBody = '';
   for (let i = 0; i < 30; i++) {
     Utilities.sleep(3000);
-    const res    = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills/' + jobId, {
+    const res  = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills/' + jobId, {
       headers: { 'Authorization': 'Bearer ' + accessToken },
       muteHttpExceptions: true,
     });
-    const result = JSON.parse(res.getContentText());
-    if (result.job && result.job.status === 'success') return result.job.result.design.id;
-    if (result.job && result.job.status === 'failed')  throw new Error('Autofill job failed.');
+    lastBody = res.getContentText();
+    Logger.log('[autofill poll ' + i + '] ' + lastBody);
+    const result = JSON.parse(lastBody);
+    const job    = result.job;
+    if (!job) throw new Error('Autofill poll unexpected response: ' + lastBody);
+    if (job.status === 'success') {
+      // design ID lives at job.result.design.id
+      const designId = job.result && job.result.design && job.result.design.id;
+      if (!designId) throw new Error('Autofill success but no design ID. Full response: ' + lastBody);
+      return designId;
+    }
+    if (job.status === 'failed') throw new Error('Autofill job failed: ' + lastBody);
   }
-  throw new Error('Autofill job timed out.');
+  throw new Error('Autofill timed out. Last response: ' + lastBody);
 }
 
 /* ─── Export ─────────────────────────────────────────────────────── */
