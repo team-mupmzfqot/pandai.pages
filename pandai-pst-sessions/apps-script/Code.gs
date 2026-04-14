@@ -19,8 +19,8 @@
  *
  * NOTE: If you already have an existing "PST Sessions" sheet from a previous version,
  * delete it (or rename it) so this script can recreate it with the new layout.
- * Layout v3: 47 cols — Timestamp | School | Time | Loc | Date | Sub Text Poster
- *            | Teacher 1-10 (Name, Position, Title, Photo each) | Submitted At
+ * Layout v4: 47 cols — Timestamp | School | Time | Loc | Date | Sub Text Poster | Poster Link
+ *            | Teacher 1-10 (Name, Position, Title, Photo each)
  */
 
 /* ─── Config ─────────────────────────────────────────────────────── */
@@ -158,12 +158,12 @@ function appendRow(data) {
   const titles    = data.teacherTitles    || [];
   const urls      = data.photoUrls        || [];
 
-  // Cols 1-5: base event details
-  // Col  6:   Sub Text Poster
-  // Cols 7+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
-  // Col 47:   Submitted At
-  // Col 48:   Poster Link (filled later when poster is generated)
-  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 2; // 48 cols
+  // Col 1:    Timestamp
+  // Cols 2-5: Event Details (School, Time, Location, Online Session Date)
+  // Col 6:    Sub Text Poster
+  // Col 7:    Poster Link (filled when poster is generated)
+  // Cols 8+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
+  const TOTAL_COLS = 7 + MAX_TEACHERS * 4; // 47 cols
   const row = [
     new Date(),
     data.schoolName        || '',
@@ -171,14 +171,13 @@ function appendRow(data) {
     data.eventLocation     || '',
     data.onlineSessionDate || '',
     data.subTextPoster     || '',
+    '',  // Poster Link — filled later
   ];
 
   // Teacher quadruplets: Name | Position | Title | Photo (up to MAX_TEACHERS)
   for (let i = 0; i < MAX_TEACHERS; i++) {
     row.push(names[i] || '', positions[i] || '', titles[i] || '', urls[i] || '');
   }
-
-  row.push(data.submittedAt || '', ''); // Submitted At, Poster Link (empty until generated)
 
   sheet.appendRow(row);
   const lastRow = sheet.getLastRow();
@@ -189,11 +188,11 @@ function appendRow(data) {
        .setVerticalAlignment('middle');
 
   // Make photo URL cells into clickable hyperlinks
-  // Photo col (1-based) for teacher i: 7 + i*4 + 3
+  // Photo col (1-based) for teacher i: 8 + i*4 + 3
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
     if (url) {
-      const col  = 7 + i * 4 + 3;
+      const col  = 8 + i * 4 + 3;
       const cell = sheet.getRange(lastRow, col);
       const richText = SpreadsheetApp.newRichTextValue()
         .setText('View Photo')
@@ -233,21 +232,20 @@ function buildSheetStructure(sheet) {
 
   // Col 1: Timestamp | Cols 2-5: Event Details | Col 6: Poster Detail
   // Cols 7-(6+MAX_TEACHERS*4): Teacher quadruplets | Last col: Meta
-  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 2; // 48 cols for 10 teachers
+  const TOTAL_COLS = 7 + MAX_TEACHERS * 4; // 47 cols for 10 teachers
 
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
     // [label, startCol, spanCols, bgColor]
     ['Submission',    1, 1, CLR_SUBMISSION],
     ['Event Details', 2, 4, CLR_EVENT],
-    ['Poster Detail', 6, 1, CLR_META],
+    ['Poster Detail', 6, 2, CLR_META],   // spans Sub Text Poster (col 6) + Poster Link (col 7)
   ];
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    const col = 7 + i * 4;
+    const col = 8 + i * 4;               // teacher groups now start at col 8
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
     groupLabels.push([`Teacher ${i + 1}`, col, 4, clr]);
   }
-  groupLabels.push(['Meta', TOTAL_COLS - 1, 2, CLR_META]); // spans Submitted At + Poster Link
 
   groupLabels.forEach(([label, startCol, span, bg]) => {
     const range = sheet.getRange(1, startCol, 1, span);
@@ -278,7 +276,7 @@ function buildSheetStructure(sheet) {
       `Teacher ${i} Photo`
     );
   }
-  colHeaders.push('Submitted At', 'Poster Link');
+  colHeaders.push('Poster Link'); // col 7 — no Submitted At (Timestamp already covers it)
 
   const headerRow = sheet.getRange(2, 1, 1, TOTAL_COLS);
   headerRow.setValues([colHeaders])
@@ -304,14 +302,13 @@ function buildSheetStructure(sheet) {
   sheet.setColumnWidth(4, 180);  // Event Location
   sheet.setColumnWidth(5, 150);  // Online Session Date
   sheet.setColumnWidth(6, 220);  // Sub Text Poster
+  sheet.setColumnWidth(7, 200);  // Poster Link
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(7 + i * 4,     160);  // Teacher Name
-    sheet.setColumnWidth(7 + i * 4 + 1, 160);  // Teacher Position
-    sheet.setColumnWidth(7 + i * 4 + 2, 140);  // Teacher Title
-    sheet.setColumnWidth(7 + i * 4 + 3, 110);  // Teacher Photo
+    sheet.setColumnWidth(8 + i * 4,     160);  // Teacher Name
+    sheet.setColumnWidth(8 + i * 4 + 1, 160);  // Teacher Position
+    sheet.setColumnWidth(8 + i * 4 + 2, 140);  // Teacher Title
+    sheet.setColumnWidth(8 + i * 4 + 3, 110);  // Teacher Photo
   }
-  sheet.setColumnWidth(TOTAL_COLS - 1, 160); // Submitted At
-  sheet.setColumnWidth(TOTAL_COLS,     200); // Poster Link
 
   /* ── Row heights ── */
   sheet.setRowHeight(1, 28);
@@ -325,7 +322,7 @@ function buildSheetStructure(sheet) {
 function updatePosterLink(rowNumber, posterUrl) {
   if (!rowNumber) return;
   const sheet      = getOrCreateSheet();
-  const POSTER_COL = 6 + MAX_TEACHERS * 4 + 2; // col 48
+  const POSTER_COL = 7; // col 7 — right after Event Details
   const cell       = sheet.getRange(rowNumber, POSTER_COL);
   const richText   = SpreadsheetApp.newRichTextValue()
     .setText('View Poster')
