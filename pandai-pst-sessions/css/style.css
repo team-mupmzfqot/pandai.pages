@@ -97,7 +97,7 @@ body {
 }
 
 .header-logo img {
-  height: 72px;
+  height: 97px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0,100,60,.18));
 }
