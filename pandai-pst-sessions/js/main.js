@@ -20,8 +20,37 @@ const progressLabel        = document.getElementById('progressLabel');
 const submitBtn            = document.getElementById('submitBtn');
 const submitLabel          = document.getElementById('submitLabel');
 const successCard          = document.getElementById('successCard');
+const successClose         = document.getElementById('successClose');
 const btnSheet             = document.getElementById('btnSheet');
 const successSummary       = document.getElementById('successSummary');
+const countdownFill        = document.getElementById('countdownFill');
+
+let successDismissTimer = null;
+
+function showSuccessCard() {
+  successCard.classList.remove('hidden', 'fading-out');
+
+  // Trigger countdown bar (must be next frame so transition fires)
+  countdownFill.classList.remove('running');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    countdownFill.classList.add('running');
+  }));
+
+  // Auto-dismiss after 6 s
+  clearTimeout(successDismissTimer);
+  successDismissTimer = setTimeout(dismissSuccessCard, 6000);
+}
+
+function dismissSuccessCard() {
+  clearTimeout(successDismissTimer);
+  successCard.classList.add('fading-out');
+  successCard.addEventListener('animationend', () => {
+    successCard.classList.add('hidden');
+    successCard.classList.remove('fading-out');
+  }, { once: true });
+}
+
+successClose.addEventListener('click', dismissSuccessCard);
 
 /* ─── File Selection ─────────────────────────────────────────────── */
 photoUpload.addEventListener('change', handleFileSelect);
@@ -452,13 +481,15 @@ pstForm.addEventListener('submit', async (e) => {
 
     if (sheetResult.sheetUrl) {
       btnSheet.href = sheetResult.sheetUrl;
+      btnSheet.style.removeProperty('pointer-events');
+      btnSheet.style.removeProperty('opacity');
     } else {
       btnSheet.removeAttribute('href');
       btnSheet.style.pointerEvents = 'none';
       btnSheet.style.opacity = '0.5';
     }
 
-    successCard.classList.remove('hidden');
+    showSuccessCard();
     successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     /* ── Reset form ── */

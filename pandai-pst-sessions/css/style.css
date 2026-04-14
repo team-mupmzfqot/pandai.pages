@@ -5,16 +5,18 @@
   padding: 0;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
 :root {
   --green:          #00cc85;
   --green-dark:     #00a36b;
+  --green-mid:      #009e68;
+  --green-deep:     #007a50;
   --green-light:    #f0fff8;
-  --blue:           #2253e6;
-  --blue-dark:      #1a3fb5;
-  --blue-light:     #eef2ff;
+  --green-teal:     #00b894;
+
   --navy:           #00193b;
   --navy-mid:       #17203d;
-  --navy-light:     #2f3b80;
 
   --success:        #00cc85;
   --success-light:  #f0fff8;
@@ -22,8 +24,8 @@
   --error-light:    #fff0f0;
   --warning:        #ffa033;
   --warning-light:  #fff7ed;
-  --info:           #2253e6;
-  --info-light:     #eef2ff;
+  --info:           #00a36b;
+  --info-light:     #f0fff8;
 
   --text:           #17203d;
   --text-muted:     #6b7280;
@@ -39,7 +41,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -64,7 +66,7 @@ body {
 
 /* ─── Header ────────────────────────────────────────────────────── */
 .form-header {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
   color: #fff;
   padding: 2.5rem 2rem 2rem;
   text-align: center;
@@ -77,7 +79,7 @@ body {
   position: absolute;
   top: -40px; right: -40px;
   width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(0,204,133,.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,204,133,.18) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -86,7 +88,7 @@ body {
   position: absolute;
   bottom: -30px; left: -30px;
   width: 150px; height: 150px;
-  background: radial-gradient(circle, rgba(34,83,230,.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,163,107,.14) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -516,8 +518,8 @@ input[type="text"]::placeholder {
 
 .status-message.info {
   background: var(--info-light);
-  color: var(--blue-dark);
-  border: 1.5px solid #a5b4fc;
+  color: var(--green-deep);
+  border: 1.5px solid #6ee7b7;
 }
 
 /* ─── Progress Bar ──────────────────────────────────────────────── */
@@ -534,7 +536,7 @@ input[type="text"]::placeholder {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--green), var(--blue));
+  background: linear-gradient(90deg, var(--green), var(--green-dark));
   border-radius: 999px;
   width: 0%;
   transition: width .3s ease;
@@ -579,26 +581,63 @@ input[type="text"]::placeholder {
 .btn-submit:disabled { opacity: .55; cursor: not-allowed; }
 
 /* ─── Success Card ──────────────────────────────────────────────── */
+@keyframes successFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes successFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
 .success-card {
+  position: relative;
   margin: 2rem 0 .5rem;
   background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
   border-radius: var(--radius);
-  padding: 2rem;
+  padding: 2.25rem 2rem 2rem;
   text-align: center;
   color: #fff;
+  animation: successFadeIn .45s ease forwards;
 }
 
-.success-icon {
-  width: 56px;
-  height: 56px;
-  background: rgba(0,204,133,.2);
-  border: 2px solid rgba(0,204,133,.4);
+.success-card.fading-out {
+  animation: successFadeOut .5s ease forwards;
+}
+
+.success-close {
+  position: absolute;
+  top: .85rem;
+  right: .85rem;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.7);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+
+.success-close:hover {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+}
+
+.success-gif {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
   margin: 0 auto .75rem;
-  font-size: 1.5rem;
+  display: block;
+  border-radius: var(--radius-sm);
 }
 
 .success-card h3 {
@@ -611,6 +650,26 @@ input[type="text"]::placeholder {
   font-size: .875rem;
   opacity: .75;
   margin-bottom: 1.5rem;
+}
+
+.success-card .countdown-bar {
+  height: 3px;
+  background: rgba(255,255,255,.15);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.success-card .countdown-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 999px;
+  width: 100%;
+  transition: width 6s linear;
+}
+
+.success-card .countdown-fill.running {
+  width: 0%;
 }
 
 .success-actions {
@@ -646,7 +705,7 @@ input[type="text"]::placeholder {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  background: linear-gradient(135deg, var(--blue) 0%, var(--navy-light) 100%);
+  background: linear-gradient(135deg, var(--green-teal) 0%, var(--green-deep) 100%);
   border: none;
   color: #fff;
   padding: .7rem 1.4rem;
@@ -656,12 +715,12 @@ input[type="text"]::placeholder {
   cursor: pointer;
   transition: opacity .15s, box-shadow .15s;
   font-family: inherit;
-  box-shadow: 0 4px 12px rgba(34,83,230,.3);
+  box-shadow: 0 4px 12px rgba(0,184,148,.3);
 }
 
 .btn-poster:hover:not(:disabled) {
   opacity: .9;
-  box-shadow: 0 6px 18px rgba(34,83,230,.4);
+  box-shadow: 0 6px 18px rgba(0,184,148,.4);
 }
 
 .btn-poster:disabled {
