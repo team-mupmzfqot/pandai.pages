@@ -388,7 +388,7 @@ async function callAppsScript(payload) {
   if (!res.ok) throw new Error(`Apps Script request failed (HTTP ${res.status})`);
 
   const data = await res.json();
-  if (!data.success) throw new Error(data.error || 'Apps Script returned an error.');
+  if (!data.success) throw new Error(data.message || 'Apps Script returned an error.');
   return data;
 }
 
