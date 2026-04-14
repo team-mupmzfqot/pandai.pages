@@ -57,8 +57,22 @@ const CLR_HEADER_BG   = '#f8fafc';   // light row bg for group label row
 /* ─── Entry points ───────────────────────────────────────────────── */
 function doGet(e) {
   // Handle Canva OAuth redirect callback
-  if (e && e.parameter && e.parameter.code) {
-    return handleCanvaOAuthCallback(e);
+  if (e && e.parameter) {
+    if (e.parameter.code) {
+      return handleCanvaOAuthCallback(e);
+    }
+    // Canva sent an error instead of a code — show it so we can diagnose
+    if (e.parameter.error) {
+      return HtmlService.createHtmlOutput(
+        '<html><body style="font-family:sans-serif;padding:2rem;max-width:600px">' +
+        '<h3 style="color:#c00">Canva OAuth Error</h3>' +
+        '<p><strong>Error:</strong> ' + e.parameter.error + '</p>' +
+        '<p>' + (e.parameter.error_description || '') + '</p>' +
+        '<hr><p style="font-size:.85rem;color:#666">Params received: <pre>' +
+        JSON.stringify(e.parameter, null, 2) + '</pre></p>' +
+        '</body></html>'
+      );
+    }
   }
   return respond(true, 'PST Sessions Apps Script is running. Submit data via POST.');
 }
