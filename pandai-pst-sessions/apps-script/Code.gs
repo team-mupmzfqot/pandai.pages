@@ -315,19 +315,40 @@ function respond(success, message, extra) {
    CANVA INTEGRATION
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ─── OAuth / PKCE helpers ───────────────────────────────────────── */
+function generateCodeVerifier() {
+  // Two UUID hex strings concatenated → 64 unreserved chars, well within 43-128 range
+  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+}
+
+function generateCodeChallenge(verifier) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, verifier);
+  // Base64URL encode: swap + → -, / → _, strip padding =
+  return Utilities.base64Encode(digest)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g,  '');
+}
+
 /* ─── OAuth ──────────────────────────────────────────────────────── */
 function getCanvaAuthUrl() {
-  const props = PropertiesService.getScriptProperties();
-  const state = Utilities.getUuid();
-  props.setProperty('CANVA_OAUTH_STATE', state);
+  const props        = PropertiesService.getScriptProperties();
+  const state        = Utilities.getUuid();
+  const codeVerifier = generateCodeVerifier();
 
-  const redirectUri = ScriptApp.getService().getUrl();
+  props.setProperty('CANVA_OAUTH_STATE',        state);
+  props.setProperty('CANVA_CODE_VERIFIER',       codeVerifier);
+
+  const codeChallenge = generateCodeChallenge(codeVerifier);
+  const redirectUri   = ScriptApp.getService().getUrl();
   const params = [
-    'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
+    'client_id='              + encodeURIComponent(CANVA_CLIENT_ID),
     'response_type=code',
-    'scope='         + encodeURIComponent(CANVA_SCOPE),
-    'redirect_uri='  + encodeURIComponent(redirectUri),
-    'state='         + encodeURIComponent(state),
+    'scope='                  + encodeURIComponent(CANVA_SCOPE),
+    'redirect_uri='           + encodeURIComponent(redirectUri),
+    'state='                  + encodeURIComponent(state),
+    'code_challenge='         + codeChallenge,
+    'code_challenge_method=S256',
   ].join('&');
 
   return CANVA_AUTH_URL + '?' + params;
@@ -344,6 +365,7 @@ function handleCanvaOAuthCallback(e) {
   }
 
   const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
+  const codeVerifier = props.getProperty('CANVA_CODE_VERIFIER');
   const redirectUri  = ScriptApp.getService().getUrl();
 
   const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
@@ -351,10 +373,11 @@ function handleCanvaOAuthCallback(e) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     payload: [
       'grant_type=authorization_code',
-      'code='          + encodeURIComponent(code),
-      'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
-      'client_secret=' + encodeURIComponent(clientSecret),
-      'redirect_uri='  + encodeURIComponent(redirectUri),
+      'code='           + encodeURIComponent(code),
+      'client_id='      + encodeURIComponent(CANVA_CLIENT_ID),
+      'client_secret='  + encodeURIComponent(clientSecret),
+      'redirect_uri='   + encodeURIComponent(redirectUri),
+      'code_verifier='  + encodeURIComponent(codeVerifier),
     ].join('&'),
     muteHttpExceptions: true,
   });
