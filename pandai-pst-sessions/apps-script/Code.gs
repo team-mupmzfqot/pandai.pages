@@ -440,8 +440,8 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
   const bytes = blob.getBytes();
   const mime  = blob.getContentType() || 'image/jpeg';
 
-  // Asset-Upload-Metadata must be a plain JSON string (not double-encoded)
-  const metaHeader = JSON.stringify({ name_base64: Utilities.base64Encode(fileName) });
+  // Asset-Upload-Metadata must be a base64-encoded JSON object
+  const metaHeader = Utilities.base64Encode(JSON.stringify({ name_base64: Utilities.base64Encode(fileName) }));
 
   const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
     method: 'POST',
