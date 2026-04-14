@@ -29,6 +29,22 @@ const PHOTOS_FOLDER = 'Photos';
 const SHEET_NAME    = 'PST Sessions';
 const MAX_TEACHERS  = 10;
 
+/* ─── Canva Config ───────────────────────────────────────────────── */
+// Client ID (public). Client Secret stored in Script Properties → CANVA_CLIENT_SECRET
+const CANVA_CLIENT_ID = 'OC-AZ2GORzqxtRC';
+const CANVA_API_BASE  = 'https://api.canva.com/rest/v1';
+const CANVA_AUTH_URL  = 'https://www.canva.com/api/oauth/authorize';
+const CANVA_TOKEN_URL = 'https://api.canva.com/rest/v1/oauth/token';
+const CANVA_SCOPE     = 'asset:write design:content:write brandtemplate:content:read';
+
+// Brand Template IDs by teacher count — add IDs as templates are created in Canva
+const CANVA_TEMPLATES = {
+  1: 'EAHGzdJTPio',
+  // 2: 'TEMPLATE_ID_FOR_2',
+  // 3: 'TEMPLATE_ID_FOR_3',
+  // ...
+};
+
 /* Column palette */
 const CLR_SUBMISSION  = '#1e293b';   // dark slate  — Timestamp
 const CLR_EVENT       = '#4f46e5';   // indigo      — Event Details (4 cols)
@@ -39,7 +55,11 @@ const CLR_WHITE       = '#ffffff';
 const CLR_HEADER_BG   = '#f8fafc';   // light row bg for group label row
 
 /* ─── Entry points ───────────────────────────────────────────────── */
-function doGet() {
+function doGet(e) {
+  // Handle Canva OAuth redirect callback
+  if (e && e.parameter && e.parameter.code) {
+    return handleCanvaOAuthCallback(e);
+  }
   return respond(true, 'PST Sessions Apps Script is running. Submit data via POST.');
 }
 
@@ -60,6 +80,17 @@ function doPost(e) {
     if (data.action === 'submit_form') {
       const sheetUrl = appendRow(data);
       return respond(true, 'Row saved successfully.', { sheetUrl });
+    }
+
+    if (data.action === 'generate_poster') {
+      const result = handleGeneratePoster(data);
+      if (result.needsAuth) {
+        return respond(true, 'Authorization required.', { needsAuth: true, authUrl: result.authUrl });
+      }
+      return respond(true, 'Poster generated.', {
+        driveViewUrl:     result.driveViewUrl,
+        driveDownloadUrl: result.driveDownloadUrl,
+      });
     }
 
     return respond(false, 'Unknown action.');
@@ -278,4 +309,331 @@ function respond(success, message, extra) {
   return ContentService
     .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CANVA INTEGRATION
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── OAuth ──────────────────────────────────────────────────────── */
+function getCanvaAuthUrl() {
+  const props = PropertiesService.getScriptProperties();
+  const state = Utilities.getUuid();
+  props.setProperty('CANVA_OAUTH_STATE', state);
+
+  const redirectUri = ScriptApp.getService().getUrl();
+  const params = [
+    'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
+    'response_type=code',
+    'scope='         + encodeURIComponent(CANVA_SCOPE),
+    'redirect_uri='  + encodeURIComponent(redirectUri),
+    'state='         + encodeURIComponent(state),
+  ].join('&');
+
+  return CANVA_AUTH_URL + '?' + params;
+}
+
+function handleCanvaOAuthCallback(e) {
+  const props        = PropertiesService.getScriptProperties();
+  const code         = e.parameter.code;
+  const state        = e.parameter.state;
+  const savedState   = props.getProperty('CANVA_OAUTH_STATE');
+
+  if (!code || state !== savedState) {
+    return HtmlService.createHtmlOutput('<h3>Authorization failed: invalid state.</h3>');
+  }
+
+  const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
+  const redirectUri  = ScriptApp.getService().getUrl();
+
+  const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    payload: [
+      'grant_type=authorization_code',
+      'code='          + encodeURIComponent(code),
+      'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
+      'client_secret=' + encodeURIComponent(clientSecret),
+      'redirect_uri='  + encodeURIComponent(redirectUri),
+    ].join('&'),
+    muteHttpExceptions: true,
+  });
+
+  const tokens = JSON.parse(res.getContentText());
+
+  if (tokens.access_token) {
+    props.setProperty('CANVA_ACCESS_TOKEN',  tokens.access_token);
+    props.setProperty('CANVA_REFRESH_TOKEN', tokens.refresh_token || '');
+    props.setProperty('CANVA_TOKEN_EXPIRY',  String(Date.now() + (tokens.expires_in || 3600) * 1000));
+
+    return HtmlService.createHtmlOutput(
+      '<html><body>' +
+      '<script>window.opener && window.opener.postMessage("canva_auth_success","*");window.close();</script>' +
+      '<p style="font-family:sans-serif;text-align:center;margin-top:3rem">' +
+      '✅ Canva authorized! You can close this window.</p>' +
+      '</body></html>'
+    );
+  }
+
+  return HtmlService.createHtmlOutput(
+    '<h3>Authorization failed.</h3><pre>' + res.getContentText() + '</pre>'
+  );
+}
+
+function getCanvaAccessToken() {
+  const props  = PropertiesService.getScriptProperties();
+  const token  = props.getProperty('CANVA_ACCESS_TOKEN');
+  const expiry = props.getProperty('CANVA_TOKEN_EXPIRY');
+
+  // Return token if valid with >5 min remaining
+  if (token && expiry && Date.now() < parseInt(expiry) - 300000) return token;
+
+  // Attempt refresh
+  const refreshToken = props.getProperty('CANVA_REFRESH_TOKEN');
+  if (refreshToken) return refreshCanvaToken(refreshToken);
+
+  return null; // Not authorized yet
+}
+
+function refreshCanvaToken(refreshToken) {
+  const props        = PropertiesService.getScriptProperties();
+  const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
+
+  const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    payload: [
+      'grant_type=refresh_token',
+      'refresh_token=' + encodeURIComponent(refreshToken),
+      'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
+      'client_secret=' + encodeURIComponent(clientSecret),
+    ].join('&'),
+    muteHttpExceptions: true,
+  });
+
+  const tokens = JSON.parse(res.getContentText());
+  if (!tokens.access_token) throw new Error('Token refresh failed: ' + res.getContentText());
+
+  props.setProperty('CANVA_ACCESS_TOKEN',  tokens.access_token);
+  if (tokens.refresh_token) props.setProperty('CANVA_REFRESH_TOKEN', tokens.refresh_token);
+  props.setProperty('CANVA_TOKEN_EXPIRY',  String(Date.now() + (tokens.expires_in || 3600) * 1000));
+
+  return tokens.access_token;
+}
+
+/* ─── One-time setup ─────────────────────────────────────────────── */
+/**
+ * Run once in Apps Script editor: Run → setupCanvaCredentials
+ * Paste your Canva Client Secret below, run the function ONCE, then delete the value.
+ * The secret is stored in Script Properties and never exposed in code.
+ */
+function setupCanvaCredentials() {
+  PropertiesService.getScriptProperties()
+    .setProperty('CANVA_CLIENT_SECRET', 'PASTE_YOUR_CANVA_CLIENT_SECRET_HERE');
+  Logger.log('✓ Canva client secret saved. Remove the value from code now.');
+}
+
+/* ─── Asset Upload ───────────────────────────────────────────────── */
+function uploadAssetToCanva(driveFileId, fileName, accessToken) {
+  const file  = DriveApp.getFileById(driveFileId);
+  const blob  = file.getBlob();
+  const bytes = blob.getBytes();
+  const mime  = blob.getContentType() || 'image/jpeg';
+
+  // Asset-Upload-Metadata must be a plain JSON string (not double-encoded)
+  const metaHeader = JSON.stringify({ name_base64: Utilities.base64Encode(fileName) });
+
+  const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
+    method: 'POST',
+    headers: {
+      'Authorization':         'Bearer ' + accessToken,
+      'Content-Type':          mime,
+      'Asset-Upload-Metadata': metaHeader,
+    },
+    payload:            bytes,
+    muteHttpExceptions: true,
+  });
+
+  const uploadData = JSON.parse(uploadRes.getContentText());
+  if (!uploadData.asset || !uploadData.asset.id) {
+    throw new Error('Asset upload failed: ' + uploadRes.getContentText());
+  }
+
+  // Poll GET /assets/{id} until import_status.state === 'success'
+  const assetId = uploadData.asset.id;
+  for (let i = 0; i < 15; i++) {
+    Utilities.sleep(2000);
+    const statusRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/' + assetId, {
+      headers: { 'Authorization': 'Bearer ' + accessToken },
+      muteHttpExceptions: true,
+    });
+    const status = JSON.parse(statusRes.getContentText());
+    const state  = status.asset && status.asset.import_status && status.asset.import_status.state;
+    if (state === 'success') return assetId;
+    if (state === 'failed')  throw new Error('Asset import failed for: ' + fileName);
+  }
+  return assetId; // Return anyway — usually usable even before poll confirms
+}
+
+/* ─── Autofill ───────────────────────────────────────────────────── */
+function createAutofillJob(brandTemplateId, fieldData, accessToken) {
+  const res = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type':  'application/json',
+    },
+    payload:            JSON.stringify({ brand_template_id: brandTemplateId, data: fieldData }),
+    muteHttpExceptions: true,
+  });
+
+  const result = JSON.parse(res.getContentText());
+  if (!result.job) throw new Error('Autofill job failed: ' + res.getContentText());
+  return result.job.id;
+}
+
+function pollAutofillJob(jobId, accessToken) {
+  for (let i = 0; i < 30; i++) {
+    Utilities.sleep(3000);
+    const res    = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills/' + jobId, {
+      headers: { 'Authorization': 'Bearer ' + accessToken },
+      muteHttpExceptions: true,
+    });
+    const result = JSON.parse(res.getContentText());
+    if (result.job && result.job.status === 'success') return result.job.result.design.id;
+    if (result.job && result.job.status === 'failed')  throw new Error('Autofill job failed.');
+  }
+  throw new Error('Autofill job timed out.');
+}
+
+/* ─── Export ─────────────────────────────────────────────────────── */
+function exportDesign(designId, accessToken) {
+  const res = UrlFetchApp.fetch(CANVA_API_BASE + '/exports', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type':  'application/json',
+    },
+    payload:            JSON.stringify({ design_id: designId, format: 'png' }),
+    muteHttpExceptions: true,
+  });
+
+  const result = JSON.parse(res.getContentText());
+  if (!result.job || !result.job.id) throw new Error('Export job failed: ' + res.getContentText());
+  return result.job.id;
+}
+
+function pollExportJob(exportJobId, accessToken) {
+  for (let i = 0; i < 30; i++) {
+    Utilities.sleep(3000);
+    const res    = UrlFetchApp.fetch(CANVA_API_BASE + '/exports/' + exportJobId, {
+      headers: { 'Authorization': 'Bearer ' + accessToken },
+      muteHttpExceptions: true,
+    });
+    const result = JSON.parse(res.getContentText());
+    const job    = result.job;
+    if (job && job.status === 'success') {
+      // API returns job.result.download_list[].url
+      const list = job.result && job.result.download_list;
+      if (list && list.length) return list.map(function(d) { return d.url; });
+      throw new Error('Export succeeded but no download URLs returned.');
+    }
+    if (job && job.status === 'failed') throw new Error('Export job failed.');
+  }
+  throw new Error('Export job timed out.');
+}
+
+/* ─── Date / Time Formatting ─────────────────────────────────────── */
+function formatEventTime(datetimeLocal) {
+  // "2026-02-05T20:00" → "8PM"  |  "2026-02-05T08:30" → "8:30AM"
+  if (!datetimeLocal) return '';
+  const timePart = (datetimeLocal.split('T')[1] || '').substring(0, 5);
+  if (!timePart) return '';
+
+  const [h, m]  = timePart.split(':').map(Number);
+  const ampm    = h >= 12 ? 'PM' : 'AM';
+  const hour12  = h % 12 || 12;
+  const minutes = m === 0 ? '' : ':' + String(m).padStart(2, '0');
+  return hour12 + minutes + ampm;
+}
+
+function formatOnlineSessionDate(datetimeLocal) {
+  // "2026-02-05T20:00" → "KHAMIS, 5 FEBRUARI 2026"
+  if (!datetimeLocal) return '';
+  const datePart = datetimeLocal.split('T')[0];
+  // Construct in UTC to avoid timezone shift
+  const [yr, mo, dy] = datePart.split('-').map(Number);
+  const date = new Date(yr, mo - 1, dy); // local date, no TZ shift
+
+  const DAYS   = ['AHAD','ISNIN','SELASA','RABU','KHAMIS','JUMAAT','SABTU'];
+  const MONTHS = ['JANUARI','FEBRUARI','MAC','APRIL','MEI','JUN',
+                  'JULAI','OGOS','SEPTEMBER','OKTOBER','NOVEMBER','DISEMBER'];
+
+  return DAYS[date.getDay()] + ', ' + dy + ' ' + MONTHS[mo - 1] + ' ' + yr;
+}
+
+/* ─── Main Poster Generator ──────────────────────────────────────── */
+function handleGeneratePoster(data) {
+  const photoUrls    = (data.photoUrls || []).filter(u => u);
+  const teacherCount = photoUrls.length;
+  if (teacherCount === 0) throw new Error('No teacher photos provided.');
+
+  const templateId = CANVA_TEMPLATES[teacherCount];
+  if (!templateId) throw new Error(
+    'No Canva template configured for ' + teacherCount + ' teacher(s). ' +
+    'Please add the Brand Template ID to CANVA_TEMPLATES in Code.gs.'
+  );
+
+  const accessToken = getCanvaAccessToken();
+  if (!accessToken) return { needsAuth: true, authUrl: getCanvaAuthUrl() };
+
+  const names     = data.teacherNames     || [];
+  const positions = data.teacherPositions || [];
+  const titles    = data.teacherTitles    || [];
+
+  // Build Canva autofill field data — must be an array of { name, type, ... } objects
+  const fieldData = [
+    { name: 'school_name',         type: 'text', text: data.schoolName    || '' },
+    { name: 'subtext',             type: 'text', text: data.subTextPoster || '' },
+    { name: 'event_time',          type: 'text', text: formatEventTime(data.eventTime) },
+    { name: 'online_session_date', type: 'text', text: formatOnlineSessionDate(data.onlineSessionDate) },
+  ];
+
+  // Upload each teacher photo to Canva and add teacher fields
+  for (let i = 0; i < teacherCount; i++) {
+    const n      = i + 1;
+    const match  = photoUrls[i].match(/\/d\/([a-zA-Z0-9_-]+)\//);
+    if (!match) throw new Error('Cannot parse Drive file ID from: ' + photoUrls[i]);
+
+    const assetId = uploadAssetToCanva(match[1], 'teacher_' + n + '.jpg', accessToken);
+    fieldData.push({ name: 'teacher_' + n + '_photo',    type: 'image', asset_id: assetId });
+    fieldData.push({ name: 'teacher_' + n + '_name',     type: 'text',  text: names[i]     || '' });
+    fieldData.push({ name: 'teacher_' + n + '_position', type: 'text',  text: positions[i] || '' });
+    fieldData.push({ name: 'teacher_' + n + '_title',    type: 'text',  text: titles[i]    || '' });
+  }
+
+  // Autofill → get design ID
+  const autofillJobId = createAutofillJob(templateId, fieldData, accessToken);
+  const designId      = pollAutofillJob(autofillJobId, accessToken);
+
+  // Export design → download URLs
+  const exportJobId   = exportDesign(designId, accessToken);
+  const exportedUrls  = pollExportJob(exportJobId, accessToken);
+  if (!exportedUrls || !exportedUrls.length) throw new Error('No export URLs returned.');
+
+  // Download poster and save to Drive in school folder
+  const posterBlob = UrlFetchApp.fetch(exportedUrls[0]).getBlob()
+    .setName('PST_Poster_' + sanitizeFolderName(data.schoolName) + '.png');
+
+  const root         = getOrCreateFolder(FOLDER_NAME);
+  const photosDir    = getOrCreateSubfolder(root, PHOTOS_FOLDER);
+  const schoolFolder = getOrCreateSubfolder(photosDir, sanitizeFolderName(data.schoolName));
+  const posterFile   = schoolFolder.createFile(posterBlob);
+  posterFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  const id = posterFile.getId();
+  return {
+    driveViewUrl:     'https://drive.google.com/file/d/' + id + '/view',
+    driveDownloadUrl: 'https://drive.google.com/uc?export=download&id=' + id,
+  };
 }

@@ -789,6 +789,106 @@ input[type="text"]::placeholder {
   letter-spacing: .5px;
 }
 
+/* ─── Poster Panel ──────────────────────────────────────────────── */
+.poster-panel {
+  margin: 0 2rem 1.5rem;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+}
+
+.poster-state { display: block; }
+
+.poster-panel h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: .25rem;
+}
+
+.poster-panel p {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.poster-state-icon {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+
+.poster-ready-check {
+  width: 48px;
+  height: 48px;
+  background: var(--green-light);
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin: 0 auto .75rem;
+}
+
+.poster-ready-actions {
+  display: flex;
+  gap: .6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.poster-status-text {
+  font-size: .875rem;
+  color: var(--text-muted);
+  margin-bottom: .25rem;
+}
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.poster-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3.5px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+  margin: 0 auto .75rem;
+}
+
+/* WhatsApp Button */
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: #25d366;
+  border: none;
+  color: #fff;
+  padding: .75rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s, box-shadow .15s;
+  box-shadow: 0 3px 10px rgba(37,211,102,.3);
+}
+
+.btn-whatsapp:hover:not(:disabled) {
+  opacity: .9;
+  box-shadow: 0 5px 14px rgba(37,211,102,.4);
+}
+
+.btn-whatsapp:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 /* ─── Utilities ─────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 

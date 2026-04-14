@@ -162,11 +162,17 @@
               </svg>
               Check Data Sheet
             </a>
-            <button type="button" class="btn-poster" disabled>
+            <button type="button" id="btnGeneratePoster" class="btn-poster" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
               Generate Poster
+            </button>
+            <button type="button" id="btnWhatsApp" class="btn-whatsapp hidden" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/>
+              </svg>
+              Create WhatsApp Group
               <span class="badge-soon">SOON</span>
             </button>
           </div>
@@ -187,6 +193,65 @@
         <h3>Submission Successful!</h3>
         <p id="successSummary">Your data has been saved to Google Sheets.</p>
         <div class="countdown-bar"><div id="countdownFill" class="countdown-fill"></div></div>
+      </div>
+
+      <!-- Poster Panel (shown when Generate Poster is clicked) -->
+      <div id="posterPanel" class="poster-panel hidden">
+
+        <!-- State: Authorization needed -->
+        <div id="posterStateAuth" class="poster-state hidden">
+          <div class="poster-state-icon">🔐</div>
+          <h3>Canva Authorization Required</h3>
+          <p>A one-time authorization is needed to generate posters via Canva.</p>
+          <button type="button" id="btnAuthorizeCanva" class="btn-submit" style="margin:0 auto">
+            Authorize Canva Access
+          </button>
+        </div>
+
+        <!-- State: Generating -->
+        <div id="posterStateGenerating" class="poster-state hidden">
+          <div class="poster-spinner"></div>
+          <p id="posterStatusText" class="poster-status-text">Initializing…</p>
+          <div class="progress-wrapper" style="margin-top:.25rem">
+            <div class="progress-bar">
+              <div id="posterProgressFill" class="progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- State: Poster ready -->
+        <div id="posterStateReady" class="poster-state hidden">
+          <div class="poster-ready-check">✓</div>
+          <h3>Your Poster is Ready!</h3>
+          <p>Saved to Google Drive. Download or view it below.</p>
+          <div class="poster-ready-actions">
+            <a id="btnViewPoster" href="#" target="_blank" rel="noopener" class="btn-sheet">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              View Poster
+            </a>
+            <a id="btnDownloadPoster" href="#" target="_blank" rel="noopener" class="btn-poster" style="text-decoration:none" onclick="onPosterDownloaded()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Download Poster
+            </a>
+          </div>
+          <button type="button" id="btnRegeneratePoster" class="btn-new-submission" style="margin:.85rem auto 0">
+            ↺ Re-generate Poster
+          </button>
+        </div>
+
+        <!-- State: Error -->
+        <div id="posterStateError" class="poster-state hidden">
+          <p id="posterErrorText" class="status-message error" style="margin:0 0 .75rem"></p>
+          <button type="button" id="btnRetryPoster" class="btn-new-submission" style="margin:0 auto">
+            Retry
+          </button>
+        </div>
+
       </div>
 
     </div>

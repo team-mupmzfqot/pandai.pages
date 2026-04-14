@@ -23,12 +23,30 @@ const formFooter           = document.getElementById('formFooter');
 const newSubmissionBtn     = document.getElementById('newSubmissionBtn');
 const postSubmitActions    = document.getElementById('postSubmitActions');
 const btnSheet             = document.getElementById('btnSheet');
+const btnGeneratePoster    = document.getElementById('btnGeneratePoster');
+const btnWhatsApp          = document.getElementById('btnWhatsApp');
 const successCard          = document.getElementById('successCard');
 const successClose         = document.getElementById('successClose');
 const successSummary       = document.getElementById('successSummary');
 const countdownFill        = document.getElementById('countdownFill');
 
-let successDismissTimer = null;
+// Poster panel elements
+const posterPanel          = document.getElementById('posterPanel');
+const posterStateAuth      = document.getElementById('posterStateAuth');
+const posterStateGenerating= document.getElementById('posterStateGenerating');
+const posterStateReady     = document.getElementById('posterStateReady');
+const posterStateError     = document.getElementById('posterStateError');
+const posterStatusText     = document.getElementById('posterStatusText');
+const posterProgressFill   = document.getElementById('posterProgressFill');
+const btnAuthorizeCanva    = document.getElementById('btnAuthorizeCanva');
+const btnViewPoster        = document.getElementById('btnViewPoster');
+const btnDownloadPoster    = document.getElementById('btnDownloadPoster');
+const btnRegeneratePoster  = document.getElementById('btnRegeneratePoster');
+const btnRetryPoster       = document.getElementById('btnRetryPoster');
+const posterErrorText      = document.getElementById('posterErrorText');
+
+let successDismissTimer  = null;
+let posterGenerationData = null; // stored after successful form submit
 
 newSubmissionBtn.addEventListener('click', () => {
   if (window.confirm('Start a new submission? The page will reload and the form will be reset.')) {
@@ -60,6 +78,99 @@ function dismissSuccessCard() {
 }
 
 successClose.addEventListener('click', dismissSuccessCard);
+
+/* ─── Poster Panel Helpers ───────────────────────────────────────── */
+function showPosterState(state) {
+  posterPanel.classList.remove('hidden');
+  [posterStateAuth, posterStateGenerating, posterStateReady, posterStateError].forEach(el => {
+    el.classList.add('hidden');
+  });
+  if (state) state.classList.remove('hidden');
+  posterPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function setPosterProgress(pct, label) {
+  posterProgressFill.style.width = pct + '%';
+  posterStatusText.textContent   = label;
+}
+
+/* ─── Canva OAuth Popup ──────────────────────────────────────────── */
+function authorizeCanva(authUrl) {
+  return new Promise((resolve, reject) => {
+    const popup = window.open(authUrl, 'canva_auth', 'width=620,height=720,left=200,top=100');
+
+    const onMessage = (event) => {
+      if (event.data === 'canva_auth_success') {
+        window.removeEventListener('message', onMessage);
+        clearInterval(pollClosed);
+        resolve();
+      }
+    };
+    window.addEventListener('message', onMessage);
+
+    const pollClosed = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(pollClosed);
+        window.removeEventListener('message', onMessage);
+        reject(new Error('Authorization window was closed without completing.'));
+      }
+    }, 1000);
+  });
+}
+
+/* ─── Generate Poster ────────────────────────────────────────────── */
+async function generatePoster() {
+  if (!posterGenerationData) return;
+
+  showPosterState(posterStateGenerating);
+  setPosterProgress(5, 'Connecting to Canva…');
+
+  try {
+    const result = await callAppsScript({
+      action: 'generate_poster',
+      ...posterGenerationData,
+    });
+
+    if (result.needsAuth) {
+      showPosterState(posterStateAuth);
+      return;
+    }
+
+    btnViewPoster.href     = result.driveViewUrl;
+    btnDownloadPoster.href = result.driveDownloadUrl;
+    showPosterState(posterStateReady);
+
+  } catch (err) {
+    posterErrorText.textContent = err.message;
+    showPosterState(posterStateError);
+  }
+}
+
+// Authorize button → open popup then retry generation
+btnAuthorizeCanva.addEventListener('click', async () => {
+  try {
+    const authData = await callAppsScript({ action: 'generate_poster', ...posterGenerationData });
+    if (authData.needsAuth) {
+      await authorizeCanva(authData.authUrl);
+      generatePoster(); // retry after auth
+    }
+  } catch (err) {
+    posterErrorText.textContent = err.message;
+    showPosterState(posterStateError);
+  }
+});
+
+btnGeneratePoster.addEventListener('click', generatePoster);
+btnRegeneratePoster.addEventListener('click', generatePoster);
+btnRetryPoster.addEventListener('click', generatePoster);
+
+// Called when user clicks Download — show success card + WhatsApp button
+function onPosterDownloaded() {
+  successSummary.textContent = 'Poster downloaded and saved to Google Drive.';
+  showSuccessCard();
+  // Show WhatsApp button
+  btnWhatsApp.classList.remove('hidden');
+}
 
 /* ─── File Selection ─────────────────────────────────────────────── */
 photoUpload.addEventListener('change', handleFileSelect);
@@ -535,6 +646,13 @@ pstForm.addEventListener('submit', async (e) => {
     newSubmissionBtn.classList.remove('hidden');
     postSubmitActions.classList.remove('hidden');
     formFooter.classList.add('post-submit');
+
+    /* ── Enable Generate Poster ── */
+    posterGenerationData = {
+      schoolName, eventTime, eventLocation, onlineSessionDate,
+      subTextPoster, teacherNames, teacherPositions, teacherTitles, photoUrls,
+    };
+    btnGeneratePoster.disabled = false;
 
     showSuccessCard();
     successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
