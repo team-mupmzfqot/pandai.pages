@@ -651,6 +651,7 @@ pstForm.addEventListener('submit', async (e) => {
     posterGenerationData = {
       schoolName, eventTime, eventLocation, onlineSessionDate,
       subTextPoster, teacherNames, teacherPositions, teacherTitles, photoUrls,
+      rowNumber: sheetResult.rowNumber,
     };
     btnGeneratePoster.disabled = false;
 

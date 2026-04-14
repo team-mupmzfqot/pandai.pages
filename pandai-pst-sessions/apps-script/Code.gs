@@ -92,8 +92,8 @@ function doPost(e) {
     }
 
     if (data.action === 'submit_form') {
-      const sheetUrl = appendRow(data);
-      return respond(true, 'Row saved successfully.', { sheetUrl });
+      const { sheetUrl, rowNumber } = appendRow(data);
+      return respond(true, 'Row saved successfully.', { sheetUrl, rowNumber });
     }
 
     if (data.action === 'generate_poster') {
@@ -161,7 +161,9 @@ function appendRow(data) {
   // Cols 1-5: base event details
   // Col  6:   Sub Text Poster
   // Cols 7+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
-  // Last col: Submitted At
+  // Col 47:   Submitted At
+  // Col 48:   Poster Link (filled later when poster is generated)
+  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 2; // 48 cols
   const row = [
     new Date(),
     data.schoolName        || '',
@@ -176,13 +178,12 @@ function appendRow(data) {
     row.push(names[i] || '', positions[i] || '', titles[i] || '', urls[i] || '');
   }
 
-  row.push(data.submittedAt || '');
+  row.push(data.submittedAt || '', ''); // Submitted At, Poster Link (empty until generated)
 
   sheet.appendRow(row);
   const lastRow = sheet.getLastRow();
 
   // Centre-align the entire new row
-  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 1;
   sheet.getRange(lastRow, 1, 1, TOTAL_COLS)
        .setHorizontalAlignment('center')
        .setVerticalAlignment('middle');
@@ -202,8 +203,9 @@ function appendRow(data) {
     }
   }
 
-  // Return the spreadsheet URL so the frontend can link directly to it
-  return sheet.getParent().getUrl();
+  // Return the spreadsheet URL and row number so the frontend can link to it
+  // and later update the Poster Link cell when a poster is generated
+  return { sheetUrl: sheet.getParent().getUrl(), rowNumber: lastRow };
 }
 
 /* ─── Sheet Creation ─────────────────────────────────────────────── */
@@ -231,7 +233,7 @@ function buildSheetStructure(sheet) {
 
   // Col 1: Timestamp | Cols 2-5: Event Details | Col 6: Poster Detail
   // Cols 7-(6+MAX_TEACHERS*4): Teacher quadruplets | Last col: Meta
-  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 1; // 47 cols for 10 teachers
+  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 2; // 48 cols for 10 teachers
 
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
@@ -245,7 +247,7 @@ function buildSheetStructure(sheet) {
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
     groupLabels.push([`Teacher ${i + 1}`, col, 4, clr]);
   }
-  groupLabels.push(['Meta', TOTAL_COLS, 1, CLR_META]);
+  groupLabels.push(['Meta', TOTAL_COLS - 1, 2, CLR_META]); // spans Submitted At + Poster Link
 
   groupLabels.forEach(([label, startCol, span, bg]) => {
     const range = sheet.getRange(1, startCol, 1, span);
@@ -276,7 +278,7 @@ function buildSheetStructure(sheet) {
       `Teacher ${i} Photo`
     );
   }
-  colHeaders.push('Submitted At');
+  colHeaders.push('Submitted At', 'Poster Link');
 
   const headerRow = sheet.getRange(2, 1, 1, TOTAL_COLS);
   headerRow.setValues([colHeaders])
@@ -308,7 +310,8 @@ function buildSheetStructure(sheet) {
     sheet.setColumnWidth(7 + i * 4 + 2, 140);  // Teacher Title
     sheet.setColumnWidth(7 + i * 4 + 3, 110);  // Teacher Photo
   }
-  sheet.setColumnWidth(TOTAL_COLS, 160); // Submitted At
+  sheet.setColumnWidth(TOTAL_COLS - 1, 160); // Submitted At
+  sheet.setColumnWidth(TOTAL_COLS,     200); // Poster Link
 
   /* ── Row heights ── */
   sheet.setRowHeight(1, 28);
@@ -316,6 +319,19 @@ function buildSheetStructure(sheet) {
 
   /* ── Sheet tab colour ── */
   sheet.setTabColor('#0d9488');
+}
+
+/* ─── Sheet Poster Link Update ───────────────────────────────────── */
+function updatePosterLink(rowNumber, posterUrl) {
+  if (!rowNumber) return;
+  const sheet       = getOrCreateSheet();
+  const POSTER_COL  = 6 + MAX_TEACHERS * 4 + 2; // col 48
+  const cell        = sheet.getRange(rowNumber, POSTER_COL);
+  const richText    = SpreadsheetApp.newRichTextValue()
+    .setText('View Poster')
+    .setLinkUrl(posterUrl)
+    .build();
+  cell.setRichTextValue(richText);
 }
 
 /* ─── Drive Helpers ──────────────────────────────────────────────── */
@@ -767,9 +783,14 @@ function handleGeneratePoster(data) {
   const posterFile   = schoolFolder.createFile(posterBlob);
   try { posterFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (_) {}
 
-  const id = posterFile.getId();
+  const id       = posterFile.getId();
+  const viewUrl  = 'https://drive.google.com/file/d/' + id + '/view';
+
+  // Write poster link back into the sheet row
+  try { updatePosterLink(data.rowNumber, viewUrl); } catch (_) {}
+
   return {
-    driveViewUrl:     'https://drive.google.com/file/d/' + id + '/view',
+    driveViewUrl:     viewUrl,
     driveDownloadUrl: 'https://drive.google.com/uc?export=download&id=' + id,
   };
 }
