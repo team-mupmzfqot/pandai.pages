@@ -433,6 +433,15 @@ function setupCanvaCredentials() {
   Logger.log('✓ Canva client secret saved. Remove the value from code now.');
 }
 
+/**
+ * Run in Apps Script editor to see the exact redirect URI this deployment uses.
+ * Copy the logged URL and paste it into Canva Developer Portal → OAuth Redirect URIs.
+ */
+function logRedirectUri() {
+  Logger.log('Redirect URI: ' + ScriptApp.getService().getUrl());
+  Logger.log('Auth URL: ' + getCanvaAuthUrl());
+}
+
 /* ─── Asset Upload ───────────────────────────────────────────────── */
 function uploadAssetToCanva(driveFileId, fileName, accessToken) {
   const file  = DriveApp.getFileById(driveFileId);
