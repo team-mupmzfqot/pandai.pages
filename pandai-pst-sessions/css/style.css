@@ -66,50 +66,55 @@ body {
 
 /* ─── Header ────────────────────────────────────────────────────── */
 .form-header {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--green-dark)   0%,
+    var(--green)        22%,
+    rgba(255,255,255,.92) 50%,
+    var(--green)        78%,
+    var(--green-dark)   100%
+  );
+  color: var(--navy);
   padding: 2.5rem 2rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
 }
 
+/* subtle inner glow at the white centre */
 .form-header::before {
   content: '';
   position: absolute;
-  top: -40px; right: -40px;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(0,204,133,.18) 0%, transparent 70%);
-  border-radius: 50%;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 80% at 50% 50%, rgba(255,255,255,.55) 0%, transparent 70%);
+  pointer-events: none;
 }
 
-.form-header::after {
-  content: '';
-  position: absolute;
-  bottom: -30px; left: -30px;
-  width: 150px; height: 150px;
-  background: radial-gradient(circle, rgba(0,163,107,.14) 0%, transparent 70%);
-  border-radius: 50%;
+.header-logo {
+  position: relative;
+  z-index: 1;
+  margin-bottom: .85rem;
 }
 
 .header-logo img {
-  height: 44px;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 1;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,100,60,.18));
 }
 
 .form-header h1 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: -.4px;
+  letter-spacing: -.3px;
+  color: var(--navy);
   position: relative;
   z-index: 1;
 }
 
 .form-subtitle {
   font-size: .875rem;
-  opacity: .75;
+  color: var(--navy-mid);
+  opacity: .8;
   margin-top: .4rem;
   position: relative;
   z-index: 1;
