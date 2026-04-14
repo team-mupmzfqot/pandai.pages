@@ -525,10 +525,10 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
   const metaHeader = Utilities.base64Encode(JSON.stringify({ name_base64: Utilities.base64Encode(fileName) }));
 
   const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
-    method: 'POST',
+    method:      'POST',
+    contentType: mime,          // top-level option avoids duplicate Content-Type header
     headers: {
       'Authorization':         'Bearer ' + accessToken,
-      'Content-Type':          'application/octet-stream',
       'Asset-Upload-Metadata': metaHeader,
     },
     payload:            bytes,
