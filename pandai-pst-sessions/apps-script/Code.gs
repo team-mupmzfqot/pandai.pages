@@ -324,14 +324,16 @@ function buildSheetStructure(sheet) {
 /* ─── Sheet Poster Link Update ───────────────────────────────────── */
 function updatePosterLink(rowNumber, posterUrl) {
   if (!rowNumber) return;
-  const sheet       = getOrCreateSheet();
-  const POSTER_COL  = 6 + MAX_TEACHERS * 4 + 2; // col 48
-  const cell        = sheet.getRange(rowNumber, POSTER_COL);
-  const richText    = SpreadsheetApp.newRichTextValue()
+  const sheet      = getOrCreateSheet();
+  const POSTER_COL = 6 + MAX_TEACHERS * 4 + 2; // col 48
+  const cell       = sheet.getRange(rowNumber, POSTER_COL);
+  const richText   = SpreadsheetApp.newRichTextValue()
     .setText('View Poster')
     .setLinkUrl(posterUrl)
     .build();
   cell.setRichTextValue(richText);
+  SpreadsheetApp.flush(); // commit immediately
+  Logger.log('[posterLink] updated row ' + rowNumber + ' col ' + POSTER_COL);
 }
 
 /* ─── Drive Helpers ──────────────────────────────────────────────── */
@@ -787,7 +789,11 @@ function handleGeneratePoster(data) {
   const viewUrl  = 'https://drive.google.com/file/d/' + id + '/view';
 
   // Write poster link back into the sheet row
-  try { updatePosterLink(data.rowNumber, viewUrl); } catch (_) {}
+  try {
+    updatePosterLink(data.rowNumber, viewUrl);
+  } catch (e) {
+    Logger.log('[posterLink] failed: ' + e.toString());
+  }
 
   return {
     driveViewUrl:     viewUrl,

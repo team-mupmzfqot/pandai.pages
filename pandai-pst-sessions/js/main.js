@@ -655,6 +655,12 @@ pstForm.addEventListener('submit', async (e) => {
     };
     btnGeneratePoster.disabled = false;
 
+    /* ── Collapse completed form sections ── */
+    document.getElementById('sectionEventDetails').classList.add('hidden');
+    document.getElementById('sectionTeachersPhotos').classList.add('hidden');
+    document.getElementById('teacherNamesSection').classList.add('hidden');
+    document.getElementById('sectionPosterDetail').classList.add('hidden');
+
     showSuccessCard();
     successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
