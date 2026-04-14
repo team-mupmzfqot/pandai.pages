@@ -474,7 +474,8 @@ input[type="text"]::placeholder {
 }
 
 .teacher-name-input,
-.teacher-position-input {
+.teacher-position-input,
+.teacher-title-input {
   padding: .6rem .85rem;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-xs);
@@ -488,7 +489,8 @@ input[type="text"]::placeholder {
 }
 
 .teacher-name-input:focus,
-.teacher-position-input:focus {
+.teacher-position-input:focus,
+.teacher-title-input:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(0,204,133,.15);
 }

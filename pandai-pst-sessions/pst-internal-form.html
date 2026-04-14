@@ -108,8 +108,25 @@
         <!-- Teacher Names (dynamic) -->
         <div id="teacherNamesSection" class="form-section hidden">
           <h2 class="section-title">Teachers Names</h2>
-          <p class="section-hint">Enter the name of each teacher matching the photo above it.</p>
+          <p class="section-hint">Enter the name, position and title for each teacher.</p>
           <div id="teacherNameFields" class="teacher-fields"></div>
+        </div>
+
+        <!-- Poster Detail -->
+        <div class="form-section">
+          <h2 class="section-title">Poster Detail</h2>
+          <p class="section-hint">Details that will appear on the generated poster.</p>
+          <div class="form-group">
+            <label for="subTextPoster">Sub Text Poster <span class="required">*</span></label>
+            <input
+              type="text"
+              id="subTextPoster"
+              name="subTextPoster"
+              value="Kerjasama Bersama GURU BESAR &amp; Pihak Sekolah"
+              autocomplete="off"
+              required
+            />
+          </div>
         </div>
 
         <!-- Status / Progress -->

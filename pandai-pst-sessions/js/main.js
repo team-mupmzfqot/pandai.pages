@@ -196,20 +196,23 @@ function onDrop(e) {
   // Capture current values before re-render
   const names     = getTeacherNames();
   const positions = getTeacherPositions();
+  const titles    = getTeacherTitles();
 
   // Reorder files array
   const moved = uploadedFiles.splice(dragSrcIndex, 1)[0];
   uploadedFiles.splice(destIndex, 0, moved);
 
-  // Reorder names + positions to match
+  // Reorder names, positions and titles to match
   const movedName     = names.splice(dragSrcIndex, 1)[0];
   const movedPosition = positions.splice(dragSrcIndex, 1)[0];
+  const movedTitle    = titles.splice(dragSrcIndex, 1)[0];
   names.splice(destIndex, 0, movedName);
   positions.splice(destIndex, 0, movedPosition);
+  titles.splice(destIndex, 0, movedTitle);
 
   dragSrcIndex = null;
   renderPreviews();
-  renderTeacherFields(names, positions);
+  renderTeacherFields(names, positions, titles);
   updateCounter();
 }
 
@@ -221,7 +224,7 @@ function onDragEnd() {
   });
 }
 
-function renderTeacherFields(preorderedNames, preorderedPositions) {
+function renderTeacherFields(preorderedNames, preorderedPositions, preorderedTitles) {
   // Use provided values (from a reorder) or read current input values
   const existingNames = preorderedNames || Array.from(
     teacherNameFields.querySelectorAll('.teacher-name-input')
@@ -229,6 +232,10 @@ function renderTeacherFields(preorderedNames, preorderedPositions) {
 
   const existingPositions = preorderedPositions || Array.from(
     teacherNameFields.querySelectorAll('.teacher-position-input')
+  ).map(inp => inp.value.trim());
+
+  const existingTitles = preorderedTitles || Array.from(
+    teacherNameFields.querySelectorAll('.teacher-title-input')
   ).map(inp => inp.value.trim());
 
   teacherNameFields.innerHTML = '';
@@ -264,6 +271,15 @@ function renderTeacherFields(preorderedNames, preorderedPositions) {
           required
           autocomplete="off"
           value="${escapeHtml(existingPositions[index] || '')}"
+        />
+        <input
+          class="teacher-title-input"
+          type="text"
+          id="title_${index}"
+          placeholder="Teacher's title (e.g. Cikgu, Dr., Tuan)"
+          required
+          autocomplete="off"
+          value="${escapeHtml(existingTitles[index] || '')}"
         />
       </div>
     `;
@@ -322,6 +338,13 @@ function getTeacherNames() {
 function getTeacherPositions() {
   return uploadedFiles.map((_, i) => {
     const el = document.getElementById(`position_${i}`);
+    return el ? el.value.trim() : '';
+  });
+}
+
+function getTeacherTitles() {
+  return uploadedFiles.map((_, i) => {
+    const el = document.getElementById(`title_${i}`);
     return el ? el.value.trim() : '';
   });
 }
@@ -396,8 +419,10 @@ pstForm.addEventListener('submit', async (e) => {
   const eventTime         = document.getElementById('eventTime').value;
   const eventLocation     = document.getElementById('eventLocation').value.trim();
   const onlineSessionDate = document.getElementById('onlineSessionDate').value;
+  const subTextPoster     = document.getElementById('subTextPoster').value.trim();
   const teacherNames      = getTeacherNames();
   const teacherPositions  = getTeacherPositions();
+  const teacherTitles     = getTeacherTitles();
 
   /* ── Client-side validation ── */
   if (!schoolName) {
@@ -418,6 +443,11 @@ pstForm.addEventListener('submit', async (e) => {
 
   if (teacherPositions.some(p => !p)) {
     showStatus('Please enter all teacher positions.', 'error');
+    return;
+  }
+
+  if (teacherTitles.some(t => !t)) {
+    showStatus('Please enter all teacher titles.', 'error');
     return;
   }
 
@@ -471,13 +501,15 @@ pstForm.addEventListener('submit', async (e) => {
 
     const sheetResult = await submitToSheets({
       schoolName,
-      teacherNames,
-      teacherPositions,
-      fileNames,
-      photoUrls,
       eventTime,
       eventLocation,
       onlineSessionDate,
+      subTextPoster,
+      teacherNames,
+      teacherPositions,
+      teacherTitles,
+      fileNames,
+      photoUrls,
       submittedAt: new Date().toISOString(),
     });
 

@@ -19,6 +19,8 @@
  *
  * NOTE: If you already have an existing "PST Sessions" sheet from a previous version,
  * delete it (or rename it) so this script can recreate it with the new layout.
+ * Layout v3: 47 cols — Timestamp | School | Time | Loc | Date | Sub Text Poster
+ *            | Teacher 1-10 (Name, Position, Title, Photo each) | Submitted At
  */
 
 /* ─── Config ─────────────────────────────────────────────────────── */
@@ -93,24 +95,28 @@ function sanitizeFolderName(name) {
 
 /* ─── Sheet Append ───────────────────────────────────────────────── */
 function appendRow(data) {
-  const sheet   = getOrCreateSheet();
-  const names   = data.teacherNames || [];
-  const urls    = data.photoUrls    || [];
+  const sheet     = getOrCreateSheet();
+  const names     = data.teacherNames     || [];
+  const positions = data.teacherPositions || [];
+  const titles    = data.teacherTitles    || [];
+  const urls      = data.photoUrls        || [];
 
-  // Base columns: Timestamp, School, Event Time, Location, Online Date
+  // Cols 1-5: base event details
+  // Col  6:   Sub Text Poster
+  // Cols 7+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
+  // Last col: Submitted At
   const row = [
     new Date(),
     data.schoolName        || '',
     data.eventTime         || '',
     data.eventLocation     || '',
     data.onlineSessionDate || '',
+    data.subTextPoster     || '',
   ];
 
-  const positions = data.teacherPositions || [];
-
-  // Teacher triplets: Name | Position | Photo (up to MAX_TEACHERS)
+  // Teacher quadruplets: Name | Position | Title | Photo (up to MAX_TEACHERS)
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    row.push(names[i] || '', positions[i] || '', urls[i] || '');
+    row.push(names[i] || '', positions[i] || '', titles[i] || '', urls[i] || '');
   }
 
   row.push(data.submittedAt || '');
@@ -119,16 +125,17 @@ function appendRow(data) {
   const lastRow = sheet.getLastRow();
 
   // Centre-align the entire new row
-  const TOTAL_COLS = 5 + MAX_TEACHERS * 3 + 1;
+  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 1;
   sheet.getRange(lastRow, 1, 1, TOTAL_COLS)
        .setHorizontalAlignment('center')
        .setVerticalAlignment('middle');
 
   // Make photo URL cells into clickable hyperlinks
+  // Photo col (1-based) for teacher i: 7 + i*4 + 3
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
     if (url) {
-      const col = 6 + i * 3 + 2; // photo column index (1-based): Name=col+0, Position=col+1, Photo=col+2
+      const col  = 7 + i * 4 + 3;
       const cell = sheet.getRange(lastRow, col);
       const richText = SpreadsheetApp.newRichTextValue()
         .setText('View Photo')
@@ -165,18 +172,21 @@ function getOrCreateSheet() {
 function buildSheetStructure(sheet) {
   sheet.setName('Submissions');
 
-  const TOTAL_COLS = 5 + MAX_TEACHERS * 3 + 1; // 36 cols for 10 teachers
+  // Col 1: Timestamp | Cols 2-5: Event Details | Col 6: Poster Detail
+  // Cols 7-(6+MAX_TEACHERS*4): Teacher quadruplets | Last col: Meta
+  const TOTAL_COLS = 6 + MAX_TEACHERS * 4 + 1; // 47 cols for 10 teachers
 
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
     // [label, startCol, spanCols, bgColor]
-    ['Submission',     1, 1, CLR_SUBMISSION],
-    ['Event Details',  2, 4, CLR_EVENT],
+    ['Submission',    1, 1, CLR_SUBMISSION],
+    ['Event Details', 2, 4, CLR_EVENT],
+    ['Poster Detail', 6, 1, CLR_META],
   ];
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    const col = 6 + i * 3;
+    const col = 7 + i * 4;
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
-    groupLabels.push([`Teacher ${i + 1}`, col, 3, clr]);
+    groupLabels.push([`Teacher ${i + 1}`, col, 4, clr]);
   }
   groupLabels.push(['Meta', TOTAL_COLS, 1, CLR_META]);
 
@@ -199,9 +209,15 @@ function buildSheetStructure(sheet) {
     'Event Time',
     'Event Location',
     'Online Session Date',
+    'Sub Text Poster',
   ];
   for (let i = 1; i <= MAX_TEACHERS; i++) {
-    colHeaders.push(`Teacher ${i} Name`, `Teacher ${i} Position`, `Teacher ${i} Photo`);
+    colHeaders.push(
+      `Teacher ${i} Name`,
+      `Teacher ${i} Position`,
+      `Teacher ${i} Title`,
+      `Teacher ${i} Photo`
+    );
   }
   colHeaders.push('Submitted At');
 
@@ -228,10 +244,12 @@ function buildSheetStructure(sheet) {
   sheet.setColumnWidth(3, 150);  // Event Time
   sheet.setColumnWidth(4, 180);  // Event Location
   sheet.setColumnWidth(5, 150);  // Online Session Date
+  sheet.setColumnWidth(6, 220);  // Sub Text Poster
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(6 + i * 3,     160);  // Teacher Name
-    sheet.setColumnWidth(6 + i * 3 + 1, 160);  // Teacher Position
-    sheet.setColumnWidth(6 + i * 3 + 2, 110);  // Teacher Photo
+    sheet.setColumnWidth(7 + i * 4,     160);  // Teacher Name
+    sheet.setColumnWidth(7 + i * 4 + 1, 160);  // Teacher Position
+    sheet.setColumnWidth(7 + i * 4 + 2, 140);  // Teacher Title
+    sheet.setColumnWidth(7 + i * 4 + 3, 110);  // Teacher Photo
   }
   sheet.setColumnWidth(TOTAL_COLS, 160); // Submitted At
 
@@ -240,7 +258,7 @@ function buildSheetStructure(sheet) {
   sheet.setRowHeight(2, 24);
 
   /* ── Sheet tab colour ── */
-  sheet.setTabColor('#4f46e5');
+  sheet.setTabColor('#0d9488');
 }
 
 /* ─── Drive Helpers ──────────────────────────────────────────────── */
