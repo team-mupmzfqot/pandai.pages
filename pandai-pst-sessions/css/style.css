@@ -593,13 +593,16 @@ input[type="text"]::placeholder {
 
 .success-card {
   position: relative;
-  margin: 2rem 0 .5rem;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  max-width: 350px;
+  margin: 2rem auto 1.5rem;
+  background: #fff;
+  border: 1.5px solid var(--green);
   border-radius: var(--radius);
-  padding: 2.25rem 2rem 2rem;
+  padding: 1.5rem 1.25rem 1.25rem;
   text-align: center;
-  color: #fff;
-  animation: successFadeIn .45s ease forwards;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0,204,133,.18);
+  animation: successFadeIn .4s ease forwards;
 }
 
 .success-card.fading-out {
@@ -608,56 +611,71 @@ input[type="text"]::placeholder {
 
 .success-close {
   position: absolute;
-  top: .85rem;
-  right: .85rem;
-  width: 28px;
-  height: 28px;
+  top: .7rem;
+  right: .7rem;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.7);
-  font-size: 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: .95rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background .15s, color .15s;
-  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
 }
 
 .success-close:hover {
-  background: rgba(255,255,255,.2);
-  color: #fff;
+  background: var(--error-light);
+  border-color: var(--error);
+  color: var(--error);
 }
 
-.success-gif {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-  margin: 0 auto .75rem;
-  display: block;
+/* GIF frame — its own contained block */
+.success-gif-frame {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 1rem;
   border-radius: var(--radius-sm);
+  background: var(--green-light);
+  border: 1.5px solid rgba(0,204,133,.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .5rem;
+}
+
+.success-gif-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .success-card h3 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  margin-bottom: .35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: .25rem;
 }
 
 .success-card p {
-  font-size: .875rem;
-  opacity: .75;
-  margin-bottom: 1.5rem;
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .success-card .countdown-bar {
   height: 3px;
-  background: rgba(255,255,255,.15);
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .success-card .countdown-fill {
@@ -674,7 +692,7 @@ input[type="text"]::placeholder {
 
 .success-actions {
   display: flex;
-  gap: .85rem;
+  gap: .6rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -682,45 +700,44 @@ input[type="text"]::placeholder {
 .btn-sheet {
   display: inline-flex;
   align-items: center;
-  gap: .5rem;
-  background: rgba(0,204,133,.15);
-  border: 1.5px solid rgba(0,204,133,.4);
-  color: var(--green);
-  padding: .7rem 1.4rem;
-  border-radius: var(--radius-sm);
-  font-size: .875rem;
+  gap: .4rem;
+  background: var(--green-light);
+  border: 1.5px solid var(--green);
+  color: var(--green-dark);
+  padding: .55rem 1rem;
+  border-radius: var(--radius-xs);
+  font-size: .8rem;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  transition: background .15s, border-color .15s;
+  transition: background .15s;
   font-family: inherit;
 }
 
 .btn-sheet:hover {
-  background: rgba(0,204,133,.25);
-  border-color: var(--green);
+  background: rgba(0,204,133,.2);
 }
 
 .btn-poster {
   display: inline-flex;
   align-items: center;
-  gap: .5rem;
+  gap: .4rem;
   background: linear-gradient(135deg, var(--green-teal) 0%, var(--green-deep) 100%);
   border: none;
   color: #fff;
-  padding: .7rem 1.4rem;
-  border-radius: var(--radius-sm);
-  font-size: .875rem;
+  padding: .55rem 1rem;
+  border-radius: var(--radius-xs);
+  font-size: .8rem;
   font-weight: 700;
   cursor: pointer;
   transition: opacity .15s, box-shadow .15s;
   font-family: inherit;
-  box-shadow: 0 4px 12px rgba(0,184,148,.3);
+  box-shadow: 0 3px 10px rgba(0,163,107,.25);
 }
 
 .btn-poster:hover:not(:disabled) {
   opacity: .9;
-  box-shadow: 0 6px 18px rgba(0,184,148,.4);
+  box-shadow: 0 5px 14px rgba(0,163,107,.35);
 }
 
 .btn-poster:disabled {
@@ -729,9 +746,9 @@ input[type="text"]::placeholder {
 }
 
 .btn-poster .badge-soon {
-  font-size: .65rem;
-  background: rgba(255,255,255,.2);
-  padding: .15rem .4rem;
+  font-size: .6rem;
+  background: rgba(255,255,255,.25);
+  padding: .1rem .35rem;
   border-radius: 4px;
   letter-spacing: .5px;
 }
