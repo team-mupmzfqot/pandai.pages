@@ -516,24 +516,33 @@ function logRedirectUri() {
 
 /* ─── Asset Upload ───────────────────────────────────────────────── */
 function uploadAssetToCanva(driveFileId, fileName, accessToken) {
-  const file  = DriveApp.getFileById(driveFileId);
-  const blob  = file.getBlob();
-  const bytes = blob.getBytes();
-  const mime  = blob.getContentType() || 'image/jpeg';
+  const file = DriveApp.getFileById(driveFileId);
+  const blob = file.getBlob();
+  const mime = blob.getContentType() || 'image/jpeg';
 
-  // Asset-Upload-Metadata must be a base64-encoded JSON object
-  const metaHeader = Utilities.base64Encode(JSON.stringify({ name_base64: Utilities.base64Encode(fileName) }));
+  // Asset-Upload-Metadata: base64url-encoded JSON (URL-safe, no + / or = padding)
+  // name_base64 value also stripped of padding to be safe
+  const nameB64    = Utilities.base64Encode(fileName).replace(/=/g, '');
+  const metaJson   = JSON.stringify({ name_base64: nameB64 });
+  const metaHeader = Utilities.base64Encode(metaJson)
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
+  Logger.log('[upload] file=' + fileName + ' mime=' + mime + ' meta=' + metaHeader);
+
+  // Pass blob directly (not bytes array) so UrlFetchApp doesn't inject its own
+  // Content-Type default alongside ours — Content-Type lives only in headers.
   const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
-    method:      'POST',
-    contentType: mime,          // top-level option avoids duplicate Content-Type header
+    method:  'POST',
     headers: {
       'Authorization':         'Bearer ' + accessToken,
+      'Content-Type':          mime,
       'Asset-Upload-Metadata': metaHeader,
     },
-    payload:            bytes,
+    payload:            blob,
     muteHttpExceptions: true,
   });
+
+  Logger.log('[upload] status=' + uploadRes.getResponseCode() + ' body=' + uploadRes.getContentText());
 
   const uploadData = JSON.parse(uploadRes.getContentText());
   if (!uploadData.asset || !uploadData.asset.id) {
