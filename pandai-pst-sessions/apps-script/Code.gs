@@ -347,13 +347,19 @@ function generateCodeChallenge(verifier) {
 /* ─── OAuth ──────────────────────────────────────────────────────── */
 
 /**
- * Returns the pinned redirect URI from Script Properties.
- * Set Script Property CANVA_REDIRECT_URI to the exact /exec URL registered in Canva.
- * Falls back to ScriptApp URL if not set.
+ * Returns the canonical (non-Workspace-domain) redirect URI for Canva OAuth.
+ * Google Workspace accounts get /a/macros/domain/s/.../exec URLs from ScriptApp,
+ * but those don't work as OAuth redirect targets — we normalise to /macros/s/.../exec.
+ * A CANVA_REDIRECT_URI Script Property can override this if needed.
  */
 function getRedirectUri() {
-  const props = PropertiesService.getScriptProperties();
-  return props.getProperty('CANVA_REDIRECT_URI') || ScriptApp.getService().getUrl();
+  const props  = PropertiesService.getScriptProperties();
+  const pinned = props.getProperty('CANVA_REDIRECT_URI');
+  if (pinned) return pinned;
+
+  // Normalise: strip /a/macros/<domain>/ → /macros/
+  const raw = ScriptApp.getService().getUrl();
+  return raw.replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/');
 }
 
 function getCanvaAuthUrl() {
