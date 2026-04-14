@@ -127,6 +127,29 @@
         </div>
 
       </form>
+
+      <!-- Success Card (shown after submission) -->
+      <div id="successCard" class="success-card hidden">
+        <div class="success-icon">✓</div>
+        <h3>Submission Successful!</h3>
+        <p id="successSummary">Your data has been saved to Google Sheets.</p>
+        <div class="success-actions">
+          <a id="btnSheet" href="#" target="_blank" rel="noopener" class="btn-sheet">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+            </svg>
+            Check Data Sheet
+          </a>
+          <button type="button" class="btn-poster" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            Generate Poster
+            <span class="badge-soon">SOON</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 

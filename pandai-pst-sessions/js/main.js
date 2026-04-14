@@ -19,6 +19,9 @@ const progressFill         = document.getElementById('progressFill');
 const progressLabel        = document.getElementById('progressLabel');
 const submitBtn            = document.getElementById('submitBtn');
 const submitLabel          = document.getElementById('submitLabel');
+const successCard          = document.getElementById('successCard');
+const btnSheet             = document.getElementById('btnSheet');
+const successSummary       = document.getElementById('successSummary');
 
 /* ─── File Selection ─────────────────────────────────────────────── */
 photoUpload.addEventListener('change', handleFileSelect);
@@ -428,7 +431,7 @@ pstForm.addEventListener('submit', async (e) => {
     /* ── Submit to Google Sheets ── */
     setProgress(85, 'Saving to Google Sheets…');
 
-    await submitToSheets({
+    const sheetResult = await submitToSheets({
       schoolName,
       teacherNames,
       teacherPositions,
@@ -442,10 +445,21 @@ pstForm.addEventListener('submit', async (e) => {
 
     setProgress(100, 'Done!');
 
-    showStatus(
-      `Submission successful! ${uploadedFiles.length} photo(s) uploaded and data saved to Google Sheets.`,
-      'success'
-    );
+    /* ── Show success card ── */
+    const count = uploadedFiles.length;
+    successSummary.textContent =
+      `${count} photo${count !== 1 ? 's' : ''} uploaded and data saved to Google Sheets.`;
+
+    if (sheetResult.sheetUrl) {
+      btnSheet.href = sheetResult.sheetUrl;
+    } else {
+      btnSheet.removeAttribute('href');
+      btnSheet.style.pointerEvents = 'none';
+      btnSheet.style.opacity = '0.5';
+    }
+
+    successCard.classList.remove('hidden');
+    successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     /* ── Reset form ── */
     pstForm.reset();
@@ -453,6 +467,7 @@ pstForm.addEventListener('submit', async (e) => {
     renderPreviews();
     renderTeacherFields();
     updateCounter();
+    hideStatus();
 
     setTimeout(hideProgress, 1500);
 
