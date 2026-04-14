@@ -56,8 +56,8 @@ function doPost(e) {
     }
 
     if (data.action === 'submit_form') {
-      appendRow(data);
-      return respond(true, 'Row saved successfully.');
+      const sheetUrl = appendRow(data);
+      return respond(true, 'Row saved successfully.', { sheetUrl });
     }
 
     return respond(false, 'Unknown action.');
@@ -115,8 +115,8 @@ function appendRow(data) {
 
   row.push(data.submittedAt || '');
 
-  const lastRow = sheet.getLastRow() + 1;
   sheet.appendRow(row);
+  const lastRow = sheet.getLastRow();
 
   // Centre-align the entire new row
   const TOTAL_COLS = 5 + MAX_TEACHERS * 3 + 1;
@@ -137,6 +137,9 @@ function appendRow(data) {
       cell.setRichTextValue(richText);
     }
   }
+
+  // Return the spreadsheet URL so the frontend can link directly to it
+  return sheet.getParent().getUrl();
 }
 
 /* ─── Sheet Creation ─────────────────────────────────────────────── */
