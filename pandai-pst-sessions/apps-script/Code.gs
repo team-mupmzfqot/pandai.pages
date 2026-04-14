@@ -107,6 +107,13 @@ function doPost(e) {
       });
     }
 
+    // Debug: returns the exact redirect URI and auth URL this deployment would use
+    if (data.action === 'get_redirect_uri') {
+      const redirectUri = getRedirectUri();
+      const rawUrl      = ScriptApp.getService().getUrl();
+      return respond(true, 'Debug info', { redirectUri, rawUrl });
+    }
+
     return respond(false, 'Unknown action.');
 
   } catch (err) {
@@ -357,9 +364,14 @@ function getRedirectUri() {
   const pinned = props.getProperty('CANVA_REDIRECT_URI');
   if (pinned) return pinned;
 
-  // Normalise: strip /a/macros/<domain>/ → /macros/
+  // Normalise Workspace domain URL → canonical /macros/s/…/exec
+  // Google Workspace returns: script.google.com/a/macros/<domain>/macros/s/<id>/dev|exec
+  // We need:                  script.google.com/macros/s/<id>/exec
   const raw = ScriptApp.getService().getUrl();
-  return raw.replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/');
+  return raw
+    .replace(/\/a\/macros\/[^\/]+\/macros\/s\//, '/macros/s/')  // strip /a/macros/<domain>/macros/
+    .replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/')           // fallback: strip /a/macros/<domain>/
+    .replace(/\/dev$/, '/exec');                                  // dev URL → exec URL
 }
 
 function getCanvaAuthUrl() {

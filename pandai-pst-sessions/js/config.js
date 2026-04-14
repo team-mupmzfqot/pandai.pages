@@ -4,5 +4,5 @@
  */
 
 const CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxF9zG5u9f99oHccwC9m4l5f6ktQ-l37mKlQRJSms42AaHuSS_Qd05oddH4UBtvSkeg1Q/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxG61ZJdq0-OM7bPTmvChf-mUnGBOkI8Zd37aylMiPd3yLeMquNPCxP9l4vMs1_B-pasA/exec',
 };
