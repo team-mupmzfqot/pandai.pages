@@ -581,15 +581,31 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
 
 /* ─── Autofill ───────────────────────────────────────────────────── */
 function createAutofillJob(brandTemplateId, fieldData, accessToken) {
+  // Canva autofill `data` must be an object keyed by field name, not an array
+  // Input: [{name, type, text|asset_id}, ...]
+  // Output: { field_name: { type, text|asset_id }, ... }
+  const dataObj = {};
+  fieldData.forEach(function(field) {
+    const val = { type: field.type };
+    if (field.type === 'text')  val.text     = field.text;
+    if (field.type === 'image') val.asset_id = field.asset_id;
+    dataObj[field.name] = val;
+  });
+
+  const body = JSON.stringify({ brand_template_id: brandTemplateId, data: dataObj });
+  Logger.log('[autofill] body=' + body);
+
   const res = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills', {
-    method: 'POST',
+    method:      'POST',
+    contentType: 'application/json',
     headers: {
       'Authorization': 'Bearer ' + accessToken,
-      'Content-Type':  'application/json',
     },
-    payload:            JSON.stringify({ brand_template_id: brandTemplateId, data: fieldData }),
+    payload:            body,
     muteHttpExceptions: true,
   });
+
+  Logger.log('[autofill] status=' + res.getResponseCode() + ' body=' + res.getContentText());
 
   const result = JSON.parse(res.getContentText());
   if (!result.job) throw new Error('Autofill job failed: ' + res.getContentText());
