@@ -1,0 +1,5 @@
+# Local credential/note files — never commit
+*.local.md
+*.local
+
+.DS_Store
