@@ -516,53 +516,56 @@ function logRedirectUri() {
 
 /* ─── Asset Upload ───────────────────────────────────────────────── */
 function uploadAssetToCanva(driveFileId, fileName, accessToken) {
-  const file = DriveApp.getFileById(driveFileId);
-  const blob = file.getBlob();
-  const mime = blob.getContentType() || 'image/jpeg';
+  const file  = DriveApp.getFileById(driveFileId);
+  const blob  = file.getBlob();
+  const bytes = blob.getBytes();
 
-  // Asset-Upload-Metadata: base64url-encoded JSON (URL-safe, no + / or = padding)
-  // name_base64 value also stripped of padding to be safe
+  // Asset-Upload-Metadata: base64url-encoded JSON (URL-safe, no padding anywhere)
   const nameB64    = Utilities.base64Encode(fileName).replace(/=/g, '');
   const metaJson   = JSON.stringify({ name_base64: nameB64 });
   const metaHeader = Utilities.base64Encode(metaJson)
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
-  Logger.log('[upload] file=' + fileName + ' mime=' + mime + ' meta=' + metaHeader);
+  Logger.log('[upload] file=' + fileName + ' bytes=' + bytes.length + ' meta=' + metaHeader);
 
-  // Use contentType option (not headers) with application/octet-stream so UrlFetchApp
-  // sends exactly one Content-Type header without overriding from the blob's own type.
-  const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/upload', {
+  // Correct endpoint: POST /rest/v1/asset-uploads (not /assets/upload)
+  // Content-Type must be application/octet-stream per Canva docs
+  const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/asset-uploads', {
     method:      'POST',
     contentType: 'application/octet-stream',
     headers: {
       'Authorization':         'Bearer ' + accessToken,
       'Asset-Upload-Metadata': metaHeader,
     },
-    payload:            blob.getBytes(),
+    payload:            bytes,
     muteHttpExceptions: true,
   });
 
   Logger.log('[upload] status=' + uploadRes.getResponseCode() + ' body=' + uploadRes.getContentText());
 
   const uploadData = JSON.parse(uploadRes.getContentText());
-  if (!uploadData.asset || !uploadData.asset.id) {
-    throw new Error('Asset upload failed [mime=' + mime + ']: ' + uploadRes.getContentText());
+  if (!uploadData.job || !uploadData.job.id) {
+    throw new Error('Asset upload failed: ' + uploadRes.getContentText());
   }
 
-  // Poll GET /assets/{id} until import_status.state === 'success'
-  const assetId = uploadData.asset.id;
+  // If already succeeded on first response, return immediately
+  if (uploadData.job.status === 'success') return uploadData.job.asset.id;
+
+  // Poll GET /asset-uploads/{jobId} until job.status === 'success'
+  const jobId = uploadData.job.id;
   for (let i = 0; i < 15; i++) {
     Utilities.sleep(2000);
-    const statusRes = UrlFetchApp.fetch(CANVA_API_BASE + '/assets/' + assetId, {
+    const statusRes = UrlFetchApp.fetch(CANVA_API_BASE + '/asset-uploads/' + jobId, {
       headers: { 'Authorization': 'Bearer ' + accessToken },
       muteHttpExceptions: true,
     });
-    const status = JSON.parse(statusRes.getContentText());
-    const state  = status.asset && status.asset.import_status && status.asset.import_status.state;
-    if (state === 'success') return assetId;
-    if (state === 'failed')  throw new Error('Asset import failed for: ' + fileName);
+    const statusData = JSON.parse(statusRes.getContentText());
+    const job        = statusData.job;
+    if (!job) throw new Error('Asset poll error: ' + statusRes.getContentText());
+    if (job.status === 'success') return job.asset.id;
+    if (job.status === 'failed')  throw new Error('Asset import failed for ' + fileName + ': ' + JSON.stringify(job.error));
   }
-  return assetId; // Return anyway — usually usable even before poll confirms
+  throw new Error('Asset upload timed out for: ' + fileName);
 }
 
 /* ─── Autofill ───────────────────────────────────────────────────── */
