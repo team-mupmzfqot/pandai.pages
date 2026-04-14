@@ -106,9 +106,11 @@ function appendRow(data) {
     data.onlineSessionDate || '',
   ];
 
-  // Teacher pairs: Name | Photo (up to MAX_TEACHERS)
+  const positions = data.teacherPositions || [];
+
+  // Teacher triplets: Name | Position | Photo (up to MAX_TEACHERS)
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    row.push(names[i] || '', urls[i] || '');
+    row.push(names[i] || '', positions[i] || '', urls[i] || '');
   }
 
   row.push(data.submittedAt || '');
@@ -117,7 +119,7 @@ function appendRow(data) {
   sheet.appendRow(row);
 
   // Centre-align the entire new row
-  const TOTAL_COLS = 5 + MAX_TEACHERS * 2 + 1;
+  const TOTAL_COLS = 5 + MAX_TEACHERS * 3 + 1;
   sheet.getRange(lastRow, 1, 1, TOTAL_COLS)
        .setHorizontalAlignment('center')
        .setVerticalAlignment('middle');
@@ -126,7 +128,7 @@ function appendRow(data) {
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
     if (url) {
-      const col = 6 + i * 2 + 1; // photo column index (1-based)
+      const col = 6 + i * 3 + 2; // photo column index (1-based): Name=col+0, Position=col+1, Photo=col+2
       const cell = sheet.getRange(lastRow, col);
       const richText = SpreadsheetApp.newRichTextValue()
         .setText('View Photo')
@@ -160,7 +162,7 @@ function getOrCreateSheet() {
 function buildSheetStructure(sheet) {
   sheet.setName('Submissions');
 
-  const TOTAL_COLS = 5 + MAX_TEACHERS * 2 + 1; // 26 cols for 10 teachers
+  const TOTAL_COLS = 5 + MAX_TEACHERS * 3 + 1; // 36 cols for 10 teachers
 
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
@@ -169,9 +171,9 @@ function buildSheetStructure(sheet) {
     ['Event Details',  2, 4, CLR_EVENT],
   ];
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    const col = 6 + i * 2;
+    const col = 6 + i * 3;
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
-    groupLabels.push([`Teacher ${i + 1}`, col, 2, clr]);
+    groupLabels.push([`Teacher ${i + 1}`, col, 3, clr]);
   }
   groupLabels.push(['Meta', TOTAL_COLS, 1, CLR_META]);
 
@@ -196,7 +198,7 @@ function buildSheetStructure(sheet) {
     'Online Session Date',
   ];
   for (let i = 1; i <= MAX_TEACHERS; i++) {
-    colHeaders.push(`Teacher ${i} Name`, `Teacher ${i} Photo`);
+    colHeaders.push(`Teacher ${i} Name`, `Teacher ${i} Position`, `Teacher ${i} Photo`);
   }
   colHeaders.push('Submitted At');
 
@@ -224,8 +226,9 @@ function buildSheetStructure(sheet) {
   sheet.setColumnWidth(4, 180);  // Event Location
   sheet.setColumnWidth(5, 150);  // Online Session Date
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(6 + i * 2,     160);  // Teacher Name
-    sheet.setColumnWidth(6 + i * 2 + 1, 110);  // Teacher Photo
+    sheet.setColumnWidth(6 + i * 3,     160);  // Teacher Name
+    sheet.setColumnWidth(6 + i * 3 + 1, 160);  // Teacher Position
+    sheet.setColumnWidth(6 + i * 3 + 2, 110);  // Teacher Photo
   }
   sheet.setColumnWidth(TOTAL_COLS, 160); // Submitted At
 

@@ -152,24 +152,27 @@ function onDrop(e) {
   const destIndex = parseInt(e.currentTarget.dataset.index);
   if (dragSrcIndex === null || dragSrcIndex === destIndex) return;
 
-  // Capture current teacher name values before re-render
-  const names = getTeacherNames();
+  // Capture current values before re-render
+  const names     = getTeacherNames();
+  const positions = getTeacherPositions();
 
   // Reorder files array
   const moved = uploadedFiles.splice(dragSrcIndex, 1)[0];
   uploadedFiles.splice(destIndex, 0, moved);
 
-  // Reorder names to match
-  const movedName = names.splice(dragSrcIndex, 1)[0];
+  // Reorder names + positions to match
+  const movedName     = names.splice(dragSrcIndex, 1)[0];
+  const movedPosition = positions.splice(dragSrcIndex, 1)[0];
   names.splice(destIndex, 0, movedName);
+  positions.splice(destIndex, 0, movedPosition);
 
   dragSrcIndex = null;
   renderPreviews();
-  renderTeacherFields(names);
+  renderTeacherFields(names, positions);
   updateCounter();
 }
 
-function onDragEnd(e) {
+function onDragEnd() {
   dragSrcIndex = null;
   // Clean up all cards in case drop fired on a non-card target
   document.querySelectorAll('.photo-card').forEach(c => {
@@ -177,10 +180,14 @@ function onDragEnd(e) {
   });
 }
 
-function renderTeacherFields(preorderedNames) {
-  // Use provided names (from a reorder) or read current input values
-  const existingValues = preorderedNames || Array.from(
+function renderTeacherFields(preorderedNames, preorderedPositions) {
+  // Use provided values (from a reorder) or read current input values
+  const existingNames = preorderedNames || Array.from(
     teacherNameFields.querySelectorAll('.teacher-name-input')
+  ).map(inp => inp.value.trim());
+
+  const existingPositions = preorderedPositions || Array.from(
+    teacherNameFields.querySelectorAll('.teacher-position-input')
   ).map(inp => inp.value.trim());
 
   teacherNameFields.innerHTML = '';
@@ -203,10 +210,19 @@ function renderTeacherFields(preorderedNames) {
           class="teacher-name-input"
           type="text"
           id="teacher_${index}"
-          placeholder="Enter teacher's name"
+          placeholder="Teacher's name"
           required
           autocomplete="off"
-          value="${escapeHtml(existingValues[index] || '')}"
+          value="${escapeHtml(existingNames[index] || '')}"
+        />
+        <input
+          class="teacher-position-input"
+          type="text"
+          id="position_${index}"
+          placeholder="Teacher's position (e.g. Guru Matematik)"
+          required
+          autocomplete="off"
+          value="${escapeHtml(existingPositions[index] || '')}"
         />
       </div>
     `;
@@ -258,6 +274,13 @@ function escapeHtml(str) {
 function getTeacherNames() {
   return uploadedFiles.map((_, i) => {
     const el = document.getElementById(`teacher_${i}`);
+    return el ? el.value.trim() : '';
+  });
+}
+
+function getTeacherPositions() {
+  return uploadedFiles.map((_, i) => {
+    const el = document.getElementById(`position_${i}`);
     return el ? el.value.trim() : '';
   });
 }
@@ -333,6 +356,7 @@ pstForm.addEventListener('submit', async (e) => {
   const eventLocation     = document.getElementById('eventLocation').value.trim();
   const onlineSessionDate = document.getElementById('onlineSessionDate').value;
   const teacherNames      = getTeacherNames();
+  const teacherPositions  = getTeacherPositions();
 
   /* ── Client-side validation ── */
   if (!schoolName) {
@@ -348,6 +372,11 @@ pstForm.addEventListener('submit', async (e) => {
 
   if (teacherNames.some(n => !n)) {
     showStatus('Please enter all teacher names.', 'error');
+    return;
+  }
+
+  if (teacherPositions.some(p => !p)) {
+    showStatus('Please enter all teacher positions.', 'error');
     return;
   }
 
@@ -402,6 +431,7 @@ pstForm.addEventListener('submit', async (e) => {
     await submitToSheets({
       schoolName,
       teacherNames,
+      teacherPositions,
       fileNames,
       photoUrls,
       eventTime,
