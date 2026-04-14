@@ -134,7 +134,12 @@ function savePhotoToDrive(fileName, mimeType, base64Data, schoolName) {
   const bytes = Utilities.base64Decode(base64Data);
   const blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
   const file  = schoolFolder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  // Workspace orgs may restrict "Anyone with link" sharing — catch and continue.
+  // The Canva integration accesses files via the script owner's credentials, not via URL.
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (_) {}
 
   return 'https://drive.google.com/file/d/' + file.getId() + '/view';
 }
@@ -705,7 +710,7 @@ function handleGeneratePoster(data) {
   const photosDir    = getOrCreateSubfolder(root, PHOTOS_FOLDER);
   const schoolFolder = getOrCreateSubfolder(photosDir, sanitizeFolderName(data.schoolName));
   const posterFile   = schoolFolder.createFile(posterBlob);
-  posterFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  try { posterFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (_) {}
 
   const id = posterFile.getId();
   return {
