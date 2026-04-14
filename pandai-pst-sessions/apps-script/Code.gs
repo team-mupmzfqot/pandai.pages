@@ -35,7 +35,7 @@ const CANVA_CLIENT_ID = 'OC-AZ2GORzqxtRC';
 const CANVA_API_BASE  = 'https://api.canva.com/rest/v1';
 const CANVA_AUTH_URL  = 'https://www.canva.com/api/oauth/authorize';
 const CANVA_TOKEN_URL = 'https://api.canva.com/rest/v1/oauth/token';
-const CANVA_SCOPE     = 'asset:write asset:read design:content:write design:meta:read brandtemplate:content:read';
+const CANVA_SCOPE     = 'asset:write asset:read design:content:write design:content:read design:meta:read brandtemplate:content:read';
 
 // Brand Template IDs by teacher count — add IDs as templates are created in Canva
 const CANVA_TEMPLATES = {
