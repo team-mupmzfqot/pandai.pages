@@ -520,8 +520,10 @@ function uploadAssetToCanva(driveFileId, fileName, accessToken) {
   const blob  = file.getBlob();
   const bytes = blob.getBytes();
 
-  // Asset-Upload-Metadata: base64url-encoded JSON (URL-safe, no padding anywhere)
-  const nameB64    = Utilities.base64Encode(fileName).replace(/=/g, '');
+  // Asset-Upload-Metadata: base64url-encoded JSON
+  // Inner name_base64 keeps standard base64 padding (= chars) — Canva requires it
+  // Outer JSON encoding uses base64url (URL-safe, no padding)
+  const nameB64    = Utilities.base64Encode(fileName); // keep = padding
   const metaJson   = JSON.stringify({ name_base64: nameB64 });
   const metaHeader = Utilities.base64Encode(metaJson)
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
