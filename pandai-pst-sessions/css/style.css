@@ -175,7 +175,9 @@ label {
 }
 
 input[type="text"],
-input[type="datetime-local"] {
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
   padding: .7rem 1rem;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -189,7 +191,9 @@ input[type="datetime-local"] {
 }
 
 input[type="text"]:focus,
-input[type="datetime-local"]:focus {
+input[type="datetime-local"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(0,204,133,.15);
 }
