@@ -42,7 +42,10 @@ const CANVA_TEMPLATES = {
   1: 'EAHGzdJTPio',
   2: 'EAHG45Ty9JE',
   3: 'EAHG5GsMHLo',
-  // 4: 'TEMPLATE_ID_FOR_4',
+  4: 'EAHG5PBmPkM',
+  5: 'EAHG5p8a5zw',
+  6: 'EAHG5nQDKCo',
+  // 7: 'TEMPLATE_ID_FOR_7',
   // ...
 };
 
