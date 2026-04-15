@@ -24,39 +24,45 @@
  */
 
 /* ─── Config ─────────────────────────────────────────────────────── */
-const FOLDER_NAME   = 'PST-Sheets';
-const PHOTOS_FOLDER = 'Photos';
-const SHEET_NAME    = 'PST Sessions';
-const MAX_TEACHERS  = 10;
+const FOLDER_NAME = "PST-Sheets";
+const PHOTOS_FOLDER = "Photos";
+const SHEET_NAME = "PST Sessions";
+const MAX_TEACHERS = 10;
 
 /* ─── Canva Config ───────────────────────────────────────────────── */
 // Client ID (public). Client Secret stored in Script Properties → CANVA_CLIENT_SECRET
-const CANVA_CLIENT_ID = 'OC-AZ2GORzqxtRC';
-const CANVA_API_BASE  = 'https://api.canva.com/rest/v1';
-const CANVA_AUTH_URL  = 'https://www.canva.com/api/oauth/authorize';
-const CANVA_TOKEN_URL = 'https://api.canva.com/rest/v1/oauth/token';
-const CANVA_SCOPE     = 'asset:write asset:read design:content:write design:content:read design:meta:read brandtemplate:content:read';
+const CANVA_CLIENT_ID = "OC-AZ2GORzqxtRC";
+const CANVA_API_BASE = "https://api.canva.com/rest/v1";
+const CANVA_AUTH_URL = "https://www.canva.com/api/oauth/authorize";
+const CANVA_TOKEN_URL = "https://api.canva.com/rest/v1/oauth/token";
+const CANVA_SCOPE =
+  "asset:write asset:read design:content:write design:content:read design:meta:read brandtemplate:content:read";
 
-// Brand Template IDs by teacher count — add IDs as templates are created in Canva
+// Brand Template IDs keyed by speaker → teacher count
 const CANVA_TEMPLATES = {
-  1: 'EAHGzdJTPio',
-  2: 'EAHG45Ty9JE',
-  3: 'EAHG5GsMHLo',
-  4: 'EAHG5PBmPkM',
-  5: 'EAHG5p8a5zw',
-  6: 'EAHG5nQDKCo',
-  // 7: 'TEMPLATE_ID_FOR_7',
-  // ...
+  zulfaqar: {
+    1: 'EAHGzdJTPio',
+    2: 'EAHG45Ty9JE',
+    3: 'EAHG5GsMHLo',
+    4: 'EAHG5PBmPkM',
+    5: 'EAHG5p8a5zw',
+    6: 'EAHG5nQDKCo',
+    // 7: 'TEMPLATE_ID_FOR_7',
+    // ...
+  },
+  cikgu_wan: {
+    // Templates will be added when ready
+  },
 };
 
 /* Column palette */
-const CLR_SUBMISSION  = '#1e293b';   // dark slate  — Timestamp
-const CLR_EVENT       = '#4f46e5';   // indigo      — Event Details (4 cols)
-const CLR_TEACHER_ODD = '#0d9488';   // teal        — odd teacher pairs
-const CLR_TEACHER_EVN = '#0369a1';   // blue        — even teacher pairs
-const CLR_META        = '#475569';   // slate       — Submitted At
-const CLR_WHITE       = '#ffffff';
-const CLR_HEADER_BG   = '#f8fafc';   // light row bg for group label row
+const CLR_SUBMISSION = "#1e293b"; // dark slate  — Timestamp
+const CLR_EVENT = "#4f46e5"; // indigo      — Event Details (4 cols)
+const CLR_TEACHER_ODD = "#0d9488"; // teal        — odd teacher pairs
+const CLR_TEACHER_EVN = "#0369a1"; // blue        — even teacher pairs
+const CLR_META = "#475569"; // slate       — Submitted At
+const CLR_WHITE = "#ffffff";
+const CLR_HEADER_BG = "#f8fafc"; // light row bg for group label row
 
 /* ─── Entry points ───────────────────────────────────────────────── */
 function doGet(e) {
@@ -69,57 +75,74 @@ function doGet(e) {
     if (e.parameter.error) {
       return HtmlService.createHtmlOutput(
         '<html><body style="font-family:sans-serif;padding:2rem;max-width:600px">' +
-        '<h3 style="color:#c00">Canva OAuth Error</h3>' +
-        '<p><strong>Error:</strong> ' + e.parameter.error + '</p>' +
-        '<p>' + (e.parameter.error_description || '') + '</p>' +
-        '<hr><p style="font-size:.85rem;color:#666">Params received: <pre>' +
-        JSON.stringify(e.parameter, null, 2) + '</pre></p>' +
-        '</body></html>'
+          '<h3 style="color:#c00">Canva OAuth Error</h3>' +
+          "<p><strong>Error:</strong> " +
+          e.parameter.error +
+          "</p>" +
+          "<p>" +
+          (e.parameter.error_description || "") +
+          "</p>" +
+          '<hr><p style="font-size:.85rem;color:#666">Params received: <pre>' +
+          JSON.stringify(e.parameter, null, 2) +
+          "</pre></p>" +
+          "</body></html>",
       );
     }
   }
-  return respond(true, 'PST Sessions Apps Script is running. Submit data via POST.');
+  return respond(
+    true,
+    "PST Sessions Apps Script is running. Submit data via POST.",
+  );
 }
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  try { lock.waitLock(15000); } catch (_) {
-    return respond(false, 'Could not acquire lock — please try again.');
+  try {
+    lock.waitLock(15000);
+  } catch (_) {
+    return respond(false, "Could not acquire lock — please try again.");
   }
 
   try {
     const data = JSON.parse(e.postData.contents);
 
-    if (data.action === 'upload_photo') {
-      const fileUrl = savePhotoToDrive(data.fileName, data.mimeType, data.base64Data, data.schoolName);
-      return respond(true, 'Photo saved.', { fileUrl });
+    if (data.action === "upload_photo") {
+      const fileUrl = savePhotoToDrive(
+        data.fileName,
+        data.mimeType,
+        data.base64Data,
+        data.schoolName,
+      );
+      return respond(true, "Photo saved.", { fileUrl });
     }
 
-    if (data.action === 'submit_form') {
+    if (data.action === "submit_form") {
       const { sheetUrl, rowNumber } = appendRow(data);
-      return respond(true, 'Row saved successfully.', { sheetUrl, rowNumber });
+      return respond(true, "Row saved successfully.", { sheetUrl, rowNumber });
     }
 
-    if (data.action === 'generate_poster') {
+    if (data.action === "generate_poster") {
       const result = handleGeneratePoster(data);
       if (result.needsAuth) {
-        return respond(true, 'Authorization required.', { needsAuth: true, authUrl: result.authUrl });
+        return respond(true, "Authorization required.", {
+          needsAuth: true,
+          authUrl: result.authUrl,
+        });
       }
-      return respond(true, 'Poster generated.', {
-        driveViewUrl:     result.driveViewUrl,
+      return respond(true, "Poster generated.", {
+        driveViewUrl: result.driveViewUrl,
         driveDownloadUrl: result.driveDownloadUrl,
       });
     }
 
     // Debug: returns the exact redirect URI and auth URL this deployment would use
-    if (data.action === 'get_redirect_uri') {
+    if (data.action === "get_redirect_uri") {
       const redirectUri = getRedirectUri();
-      const rawUrl      = ScriptApp.getService().getUrl();
-      return respond(true, 'Debug info', { redirectUri, rawUrl });
+      const rawUrl = ScriptApp.getService().getUrl();
+      return respond(true, "Debug info", { redirectUri, rawUrl });
     }
 
-    return respond(false, 'Unknown action.');
-
+    return respond(false, "Unknown action.");
   } catch (err) {
     return respond(false, err.toString());
   } finally {
@@ -129,15 +152,18 @@ function doPost(e) {
 
 /* ─── Photo Upload ───────────────────────────────────────────────── */
 function savePhotoToDrive(fileName, mimeType, base64Data, schoolName) {
-  const root       = getOrCreateFolder(FOLDER_NAME);
-  const photosDir  = getOrCreateSubfolder(root, PHOTOS_FOLDER);
+  const root = getOrCreateFolder(FOLDER_NAME);
+  const photosDir = getOrCreateSubfolder(root, PHOTOS_FOLDER);
 
   // Store photos in a sub-folder named after the school
-  const schoolFolder = getOrCreateSubfolder(photosDir, sanitizeFolderName(schoolName));
+  const schoolFolder = getOrCreateSubfolder(
+    photosDir,
+    sanitizeFolderName(schoolName),
+  );
 
   const bytes = Utilities.base64Decode(base64Data);
-  const blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
-  const file  = schoolFolder.createFile(blob);
+  const blob = Utilities.newBlob(bytes, mimeType || "image/jpeg", fileName);
+  const file = schoolFolder.createFile(blob);
 
   // Workspace orgs may restrict "Anyone with link" sharing — catch and continue.
   // The Canva integration accesses files via the script owner's credentials, not via URL.
@@ -145,22 +171,26 @@ function savePhotoToDrive(fileName, mimeType, base64Data, schoolName) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   } catch (_) {}
 
-  return 'https://drive.google.com/file/d/' + file.getId() + '/view';
+  return "https://drive.google.com/file/d/" + file.getId() + "/view";
 }
 
 function sanitizeFolderName(name) {
-  if (!name) return 'Unknown School';
+  if (!name) return "Unknown School";
   // Trim, uppercase, replace characters unsafe in folder names
-  return name.trim().toUpperCase().replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, ' ');
+  return name
+    .trim()
+    .toUpperCase()
+    .replace(/[\/\\:*?"<>|]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 /* ─── Sheet Append ───────────────────────────────────────────────── */
 function appendRow(data) {
-  const sheet     = getOrCreateSheet();
-  const names     = data.teacherNames     || [];
+  const sheet = getOrCreateSheet();
+  const names = data.teacherNames || [];
   const positions = data.teacherPositions || [];
-  const titles    = data.teacherTitles    || [];
-  const urls      = data.photoUrls        || [];
+  const titles = data.teacherTitles || [];
+  const urls = data.photoUrls || [];
 
   // Col 1:    Timestamp
   // Cols 2-6: Event Details (School, Time, Location, Online Session Date, Online Session Time)
@@ -170,37 +200,43 @@ function appendRow(data) {
   const TOTAL_COLS = 8 + MAX_TEACHERS * 4; // 48 cols
   const row = [
     new Date(),
-    data.schoolName         || '',
-    data.eventTime          || '',
-    data.eventLocation      || '',
-    data.onlineSessionDate  || '',
-    data.onlineSessionTime  || '',
-    data.subTextPoster      || '',
-    '',  // Poster Link — filled later
+    data.schoolName || "",
+    data.eventTime || "",
+    data.eventLocation || "",
+    data.onlineSessionDate || "",
+    data.onlineSessionTime || "",
+    data.subTextPoster || "",
+    "", // Poster Link — filled later
   ];
 
   // Teacher quadruplets: Name | Position | Title | Photo (up to MAX_TEACHERS)
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    row.push(names[i] || '', positions[i] || '', titles[i] || '', urls[i] || '');
+    row.push(
+      names[i] || "",
+      positions[i] || "",
+      titles[i] || "",
+      urls[i] || "",
+    );
   }
 
   sheet.appendRow(row);
   const lastRow = sheet.getLastRow();
 
   // Centre-align the entire new row
-  sheet.getRange(lastRow, 1, 1, TOTAL_COLS)
-       .setHorizontalAlignment('center')
-       .setVerticalAlignment('middle');
+  sheet
+    .getRange(lastRow, 1, 1, TOTAL_COLS)
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle");
 
   // Make photo URL cells into clickable hyperlinks
   // Photo col (1-based) for teacher i: 9 + i*4 + 3
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
     if (url) {
-      const col  = 9 + i * 4 + 3;
+      const col = 9 + i * 4 + 3;
       const cell = sheet.getRange(lastRow, col);
       const richText = SpreadsheetApp.newRichTextValue()
-        .setText('View Photo')
+        .setText("View Photo")
         .setLinkUrl(url)
         .build();
       cell.setRichTextValue(richText);
@@ -215,7 +251,7 @@ function appendRow(data) {
 /* ─── Sheet Creation ─────────────────────────────────────────────── */
 function getOrCreateSheet() {
   const folder = getOrCreateFolder(FOLDER_NAME);
-  const files  = folder.getFilesByName(SHEET_NAME);
+  const files = folder.getFilesByName(SHEET_NAME);
 
   let ss;
   if (files.hasNext()) {
@@ -228,12 +264,12 @@ function getOrCreateSheet() {
     buildSheetStructure(ss.getActiveSheet());
   }
 
-  const sheet = ss.getSheetByName('Submissions') || ss.getActiveSheet();
+  const sheet = ss.getSheetByName("Submissions") || ss.getActiveSheet();
   return sheet;
 }
 
 function buildSheetStructure(sheet) {
-  sheet.setName('Submissions');
+  sheet.setName("Submissions");
 
   // Col 1: Timestamp | Cols 2-6: Event Details | Cols 7-8: Poster Detail
   // Cols 9+: Teacher quadruplets (Name, Position, Title, Photo ×10)
@@ -242,12 +278,12 @@ function buildSheetStructure(sheet) {
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
     // [label, startCol, spanCols, bgColor]
-    ['Submission',    1, 1, CLR_SUBMISSION],
-    ['Event Details', 2, 5, CLR_EVENT],        // cols 2-6: School, Time, Location, Date, Time
-    ['Poster Detail', 7, 2, CLR_META],         // cols 7-8: Sub Text Poster + Poster Link
+    ["Submission", 1, 1, CLR_SUBMISSION],
+    ["Event Details", 2, 5, CLR_EVENT], // cols 2-6: School, Time, Location, Date, Time
+    ["Poster Detail", 7, 2, CLR_META], // cols 7-8: Sub Text Poster + Poster Link
   ];
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    const col = 9 + i * 4;                    // teacher groups start at col 9
+    const col = 9 + i * 4; // teacher groups start at col 9
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
     groupLabels.push([`Teacher ${i + 1}`, col, 4, clr]);
   }
@@ -255,62 +291,68 @@ function buildSheetStructure(sheet) {
   groupLabels.forEach(([label, startCol, span, bg]) => {
     const range = sheet.getRange(1, startCol, 1, span);
     if (span > 1) range.merge();
-    range.setValue(label)
-         .setBackground(bg)
-         .setFontColor(CLR_WHITE)
-         .setFontWeight('bold')
-         .setFontSize(10)
-         .setHorizontalAlignment('center')
-         .setVerticalAlignment('middle');
+    range
+      .setValue(label)
+      .setBackground(bg)
+      .setFontColor(CLR_WHITE)
+      .setFontWeight("bold")
+      .setFontSize(10)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
   });
 
   /* ── Row 2: Individual column headers ── */
   const colHeaders = [
-    'Timestamp',
-    'School Name',
-    'Event Time',
-    'Event Location',
-    'Online Session Date',
-    'Online Session Time',
-    'Sub Text Poster',
-    'Poster Link',
+    "Timestamp",
+    "School Name",
+    "Event Time",
+    "Event Location",
+    "Online Session Date",
+    "Online Session Time",
+    "Sub Text Poster",
+    "Poster Link",
   ];
   // Teacher columns: group header already says "Teacher N", so keep sub-headers short
   for (let i = 1; i <= MAX_TEACHERS; i++) {
-    colHeaders.push('Name', 'Position', 'Title', 'Photo');
+    colHeaders.push("Name", "Position", "Title", "Photo");
   }
 
   const headerRow = sheet.getRange(2, 1, 1, TOTAL_COLS);
-  headerRow.setValues([colHeaders])
-           .setBackground('#e0e7ff')
-           .setFontColor('#1e1b4b')
-           .setFontWeight('bold')
-           .setFontSize(9)
-           .setHorizontalAlignment('center')
-           .setVerticalAlignment('middle')
-           .setWrap(false);
+  headerRow
+    .setValues([colHeaders])
+    .setBackground("#e0e7ff")
+    .setFontColor("#1e1b4b")
+    .setFontWeight("bold")
+    .setFontSize(9)
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(false);
 
   /* ── Freeze both header rows ── */
   sheet.setFrozenRows(2);
 
   /* ── Row banding for data rows ── */
   const dataRange = sheet.getRange(3, 1, 1000, TOTAL_COLS);
-  dataRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, false, false);
+  dataRange.applyRowBanding(
+    SpreadsheetApp.BandingTheme.LIGHT_GREY,
+    false,
+    false,
+  );
 
   /* ── Column widths ── */
-  sheet.setColumnWidth(1, 160);  // Timestamp
-  sheet.setColumnWidth(2, 180);  // School Name
-  sheet.setColumnWidth(3, 150);  // Event Time
-  sheet.setColumnWidth(4, 180);  // Event Location
-  sheet.setColumnWidth(5, 150);  // Online Session Date
-  sheet.setColumnWidth(6, 120);  // Online Session Time
-  sheet.setColumnWidth(7, 220);  // Sub Text Poster
-  sheet.setColumnWidth(8, 200);  // Poster Link
+  sheet.setColumnWidth(1, 160); // Timestamp
+  sheet.setColumnWidth(2, 180); // School Name
+  sheet.setColumnWidth(3, 150); // Event Time
+  sheet.setColumnWidth(4, 180); // Event Location
+  sheet.setColumnWidth(5, 150); // Online Session Date
+  sheet.setColumnWidth(6, 120); // Online Session Time
+  sheet.setColumnWidth(7, 220); // Sub Text Poster
+  sheet.setColumnWidth(8, 200); // Poster Link
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(9 + i * 4,     150);  // Name
-    sheet.setColumnWidth(9 + i * 4 + 1, 180);  // Position (can be long)
-    sheet.setColumnWidth(9 + i * 4 + 2,  80);  // Title (short: Cikgu, Dr.)
-    sheet.setColumnWidth(9 + i * 4 + 3,  90);  // Photo
+    sheet.setColumnWidth(9 + i * 4, 150); // Name
+    sheet.setColumnWidth(9 + i * 4 + 1, 180); // Position (can be long)
+    sheet.setColumnWidth(9 + i * 4 + 2, 80); // Title (short: Cikgu, Dr.)
+    sheet.setColumnWidth(9 + i * 4 + 3, 90); // Photo
   }
 
   /* ── Row heights ── */
@@ -318,22 +360,22 @@ function buildSheetStructure(sheet) {
   sheet.setRowHeight(2, 24);
 
   /* ── Sheet tab colour ── */
-  sheet.setTabColor('#0d9488');
+  sheet.setTabColor("#0d9488");
 }
 
 /* ─── Sheet Poster Link Update ───────────────────────────────────── */
 function updatePosterLink(rowNumber, posterUrl) {
   if (!rowNumber) return;
-  const sheet      = getOrCreateSheet();
+  const sheet = getOrCreateSheet();
   const POSTER_COL = 8; // col 8 — right after Sub Text Poster
-  const cell       = sheet.getRange(rowNumber, POSTER_COL);
-  const richText   = SpreadsheetApp.newRichTextValue()
-    .setText('View Poster')
+  const cell = sheet.getRange(rowNumber, POSTER_COL);
+  const richText = SpreadsheetApp.newRichTextValue()
+    .setText("View Poster")
     .setLinkUrl(posterUrl)
     .build();
   cell.setRichTextValue(richText);
   SpreadsheetApp.flush(); // commit immediately
-  Logger.log('[posterLink] updated row ' + rowNumber + ' col ' + POSTER_COL);
+  Logger.log("[posterLink] updated row " + rowNumber + " col " + POSTER_COL);
 }
 
 /* ─── Drive Helpers ──────────────────────────────────────────────── */
@@ -350,9 +392,9 @@ function getOrCreateSubfolder(parent, name) {
 /* ─── Response Helper ────────────────────────────────────────────── */
 function respond(success, message, extra) {
   const payload = Object.assign({ success, message }, extra || {});
-  return ContentService
-    .createTextOutput(JSON.stringify(payload))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
+    ContentService.MimeType.JSON,
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -362,16 +404,19 @@ function respond(success, message, extra) {
 /* ─── OAuth / PKCE helpers ───────────────────────────────────────── */
 function generateCodeVerifier() {
   // Two UUID hex strings concatenated → 64 unreserved chars, well within 43-128 range
-  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, "");
 }
 
 function generateCodeChallenge(verifier) {
-  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, verifier);
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    verifier,
+  );
   // Base64URL encode: swap + → -, / → _, strip padding =
   return Utilities.base64Encode(digest)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g,  '');
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 }
 
 /* ─── OAuth ──────────────────────────────────────────────────────── */
@@ -383,8 +428,8 @@ function generateCodeChallenge(verifier) {
  * A CANVA_REDIRECT_URI Script Property can override this if needed.
  */
 function getRedirectUri() {
-  const props  = PropertiesService.getScriptProperties();
-  const pinned = props.getProperty('CANVA_REDIRECT_URI');
+  const props = PropertiesService.getScriptProperties();
+  const pinned = props.getProperty("CANVA_REDIRECT_URI");
   if (pinned) return pinned;
 
   // Normalise Workspace domain URL → canonical /macros/s/…/exec
@@ -392,120 +437,130 @@ function getRedirectUri() {
   // We need:                  script.google.com/macros/s/<id>/exec
   const raw = ScriptApp.getService().getUrl();
   return raw
-    .replace(/\/a\/macros\/[^\/]+\/macros\/s\//, '/macros/s/')  // strip /a/macros/<domain>/macros/
-    .replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/')           // fallback: strip /a/macros/<domain>/
-    .replace(/\/dev$/, '/exec');                                  // dev URL → exec URL
+    .replace(/\/a\/macros\/[^\/]+\/macros\/s\//, "/macros/s/") // strip /a/macros/<domain>/macros/
+    .replace(/\/a\/macros\/[^\/]+\/s\//, "/macros/s/") // fallback: strip /a/macros/<domain>/
+    .replace(/\/dev$/, "/exec"); // dev URL → exec URL
 }
 
 function getCanvaAuthUrl() {
-  const props        = PropertiesService.getScriptProperties();
-  const state        = Utilities.getUuid();
+  const props = PropertiesService.getScriptProperties();
+  const state = Utilities.getUuid();
   const codeVerifier = generateCodeVerifier();
 
-  props.setProperty('CANVA_OAUTH_STATE',        state);
-  props.setProperty('CANVA_CODE_VERIFIER',       codeVerifier);
+  props.setProperty("CANVA_OAUTH_STATE", state);
+  props.setProperty("CANVA_CODE_VERIFIER", codeVerifier);
 
   const codeChallenge = generateCodeChallenge(codeVerifier);
-  const redirectUri   = getRedirectUri();
+  const redirectUri = getRedirectUri();
   const params = [
-    'client_id='              + encodeURIComponent(CANVA_CLIENT_ID),
-    'response_type=code',
-    'scope='                  + encodeURIComponent(CANVA_SCOPE),
-    'redirect_uri='           + encodeURIComponent(redirectUri),
-    'state='                  + encodeURIComponent(state),
-    'code_challenge='         + codeChallenge,
-    'code_challenge_method=S256',
-  ].join('&');
+    "client_id=" + encodeURIComponent(CANVA_CLIENT_ID),
+    "response_type=code",
+    "scope=" + encodeURIComponent(CANVA_SCOPE),
+    "redirect_uri=" + encodeURIComponent(redirectUri),
+    "state=" + encodeURIComponent(state),
+    "code_challenge=" + codeChallenge,
+    "code_challenge_method=S256",
+  ].join("&");
 
-  return CANVA_AUTH_URL + '?' + params;
+  return CANVA_AUTH_URL + "?" + params;
 }
 
 function handleCanvaOAuthCallback(e) {
-  const props        = PropertiesService.getScriptProperties();
-  const code         = e.parameter.code;
-  const state        = e.parameter.state;
-  const savedState   = props.getProperty('CANVA_OAUTH_STATE');
+  const props = PropertiesService.getScriptProperties();
+  const code = e.parameter.code;
+  const state = e.parameter.state;
+  const savedState = props.getProperty("CANVA_OAUTH_STATE");
 
   if (!code || state !== savedState) {
-    return HtmlService.createHtmlOutput('<h3>Authorization failed: invalid state.</h3>');
+    return HtmlService.createHtmlOutput(
+      "<h3>Authorization failed: invalid state.</h3>",
+    );
   }
 
-  const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
-  const codeVerifier = props.getProperty('CANVA_CODE_VERIFIER');
-  const redirectUri  = getRedirectUri();
+  const clientSecret = props.getProperty("CANVA_CLIENT_SECRET");
+  const codeVerifier = props.getProperty("CANVA_CODE_VERIFIER");
+  const redirectUri = getRedirectUri();
 
   const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     payload: [
-      'grant_type=authorization_code',
-      'code='           + encodeURIComponent(code),
-      'client_id='      + encodeURIComponent(CANVA_CLIENT_ID),
-      'client_secret='  + encodeURIComponent(clientSecret),
-      'redirect_uri='   + encodeURIComponent(redirectUri),
-      'code_verifier='  + encodeURIComponent(codeVerifier),
-    ].join('&'),
+      "grant_type=authorization_code",
+      "code=" + encodeURIComponent(code),
+      "client_id=" + encodeURIComponent(CANVA_CLIENT_ID),
+      "client_secret=" + encodeURIComponent(clientSecret),
+      "redirect_uri=" + encodeURIComponent(redirectUri),
+      "code_verifier=" + encodeURIComponent(codeVerifier),
+    ].join("&"),
     muteHttpExceptions: true,
   });
 
   const tokens = JSON.parse(res.getContentText());
 
   if (tokens.access_token) {
-    props.setProperty('CANVA_ACCESS_TOKEN',  tokens.access_token);
-    props.setProperty('CANVA_REFRESH_TOKEN', tokens.refresh_token || '');
-    props.setProperty('CANVA_TOKEN_EXPIRY',  String(Date.now() + (tokens.expires_in || 3600) * 1000));
+    props.setProperty("CANVA_ACCESS_TOKEN", tokens.access_token);
+    props.setProperty("CANVA_REFRESH_TOKEN", tokens.refresh_token || "");
+    props.setProperty(
+      "CANVA_TOKEN_EXPIRY",
+      String(Date.now() + (tokens.expires_in || 3600) * 1000),
+    );
 
     return HtmlService.createHtmlOutput(
-      '<html><body>' +
-      '<script>window.opener && window.opener.postMessage("canva_auth_success","*");window.close();</script>' +
-      '<p style="font-family:sans-serif;text-align:center;margin-top:3rem">' +
-      '✅ Canva authorized! You can close this window.</p>' +
-      '</body></html>'
+      "<html><body>" +
+        '<script>window.opener && window.opener.postMessage("canva_auth_success","*");window.close();</script>' +
+        '<p style="font-family:sans-serif;text-align:center;margin-top:3rem">' +
+        "✅ Canva authorized! You can close this window.</p>" +
+        "</body></html>",
     );
   }
 
   return HtmlService.createHtmlOutput(
-    '<h3>Authorization failed.</h3><pre>' + res.getContentText() + '</pre>'
+    "<h3>Authorization failed.</h3><pre>" + res.getContentText() + "</pre>",
   );
 }
 
 function getCanvaAccessToken() {
-  const props  = PropertiesService.getScriptProperties();
-  const token  = props.getProperty('CANVA_ACCESS_TOKEN');
-  const expiry = props.getProperty('CANVA_TOKEN_EXPIRY');
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty("CANVA_ACCESS_TOKEN");
+  const expiry = props.getProperty("CANVA_TOKEN_EXPIRY");
 
   // Return token if valid with >5 min remaining
   if (token && expiry && Date.now() < parseInt(expiry) - 300000) return token;
 
   // Attempt refresh
-  const refreshToken = props.getProperty('CANVA_REFRESH_TOKEN');
+  const refreshToken = props.getProperty("CANVA_REFRESH_TOKEN");
   if (refreshToken) return refreshCanvaToken(refreshToken);
 
   return null; // Not authorized yet
 }
 
 function refreshCanvaToken(refreshToken) {
-  const props        = PropertiesService.getScriptProperties();
-  const clientSecret = props.getProperty('CANVA_CLIENT_SECRET');
+  const props = PropertiesService.getScriptProperties();
+  const clientSecret = props.getProperty("CANVA_CLIENT_SECRET");
 
   const res = UrlFetchApp.fetch(CANVA_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     payload: [
-      'grant_type=refresh_token',
-      'refresh_token=' + encodeURIComponent(refreshToken),
-      'client_id='     + encodeURIComponent(CANVA_CLIENT_ID),
-      'client_secret=' + encodeURIComponent(clientSecret),
-    ].join('&'),
+      "grant_type=refresh_token",
+      "refresh_token=" + encodeURIComponent(refreshToken),
+      "client_id=" + encodeURIComponent(CANVA_CLIENT_ID),
+      "client_secret=" + encodeURIComponent(clientSecret),
+    ].join("&"),
     muteHttpExceptions: true,
   });
 
   const tokens = JSON.parse(res.getContentText());
-  if (!tokens.access_token) throw new Error('Token refresh failed: ' + res.getContentText());
+  if (!tokens.access_token)
+    throw new Error("Token refresh failed: " + res.getContentText());
 
-  props.setProperty('CANVA_ACCESS_TOKEN',  tokens.access_token);
-  if (tokens.refresh_token) props.setProperty('CANVA_REFRESH_TOKEN', tokens.refresh_token);
-  props.setProperty('CANVA_TOKEN_EXPIRY',  String(Date.now() + (tokens.expires_in || 3600) * 1000));
+  props.setProperty("CANVA_ACCESS_TOKEN", tokens.access_token);
+  if (tokens.refresh_token)
+    props.setProperty("CANVA_REFRESH_TOKEN", tokens.refresh_token);
+  props.setProperty(
+    "CANVA_TOKEN_EXPIRY",
+    String(Date.now() + (tokens.expires_in || 3600) * 1000),
+  );
 
   return tokens.access_token;
 }
@@ -517,9 +572,11 @@ function refreshCanvaToken(refreshToken) {
  * The secret is stored in Script Properties and never exposed in code.
  */
 function setupCanvaCredentials() {
-  PropertiesService.getScriptProperties()
-    .setProperty('CANVA_CLIENT_SECRET', 'PASTE_YOUR_CANVA_CLIENT_SECRET_HERE');
-  Logger.log('✓ Canva client secret saved. Remove the value from code now.');
+  PropertiesService.getScriptProperties().setProperty(
+    "CANVA_CLIENT_SECRET",
+    "PASTE_YOUR_CANVA_CLIENT_SECRET_HERE",
+  );
+  Logger.log("✓ Canva client secret saved. Remove the value from code now.");
 }
 
 /**
@@ -528,10 +585,10 @@ function setupCanvaCredentials() {
  */
 function clearCanvaTokens() {
   const props = PropertiesService.getScriptProperties();
-  props.deleteProperty('CANVA_ACCESS_TOKEN');
-  props.deleteProperty('CANVA_REFRESH_TOKEN');
-  props.deleteProperty('CANVA_TOKEN_EXPIRY');
-  Logger.log('✓ Canva tokens cleared. Re-authorization will be required.');
+  props.deleteProperty("CANVA_ACCESS_TOKEN");
+  props.deleteProperty("CANVA_REFRESH_TOKEN");
+  props.deleteProperty("CANVA_TOKEN_EXPIRY");
+  Logger.log("✓ Canva tokens cleared. Re-authorization will be required.");
 }
 
 /**
@@ -539,62 +596,84 @@ function clearCanvaTokens() {
  * Copy the logged URL and paste it into Canva Developer Portal → OAuth Redirect URIs.
  */
 function logRedirectUri() {
-  Logger.log('ScriptApp URL:  ' + ScriptApp.getService().getUrl());
-  Logger.log('Pinned URI:     ' + getRedirectUri());
-  Logger.log('Auth URL: '       + getCanvaAuthUrl());
+  Logger.log("ScriptApp URL:  " + ScriptApp.getService().getUrl());
+  Logger.log("Pinned URI:     " + getRedirectUri());
+  Logger.log("Auth URL: " + getCanvaAuthUrl());
 }
 
 /* ─── Asset Upload ───────────────────────────────────────────────── */
 function uploadAssetToCanva(driveFileId, fileName, accessToken) {
-  const file  = DriveApp.getFileById(driveFileId);
-  const blob  = file.getBlob();
+  const file = DriveApp.getFileById(driveFileId);
+  const blob = file.getBlob();
   const bytes = blob.getBytes();
 
   // Asset-Upload-Metadata: raw JSON string — NOT base64url-encoded
   // Only the inner name_base64 value is base64-encoded (standard, with = padding)
-  const nameB64    = Utilities.base64Encode(fileName);
+  const nameB64 = Utilities.base64Encode(fileName);
   const metaHeader = JSON.stringify({ name_base64: nameB64 });
 
-  Logger.log('[upload] file=' + fileName + ' bytes=' + bytes.length + ' meta=' + metaHeader);
+  Logger.log(
+    "[upload] file=" +
+      fileName +
+      " bytes=" +
+      bytes.length +
+      " meta=" +
+      metaHeader,
+  );
 
   // Correct endpoint: POST /rest/v1/asset-uploads (not /assets/upload)
   // Content-Type must be application/octet-stream per Canva docs
-  const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + '/asset-uploads', {
-    method:      'POST',
-    contentType: 'application/octet-stream',
+  const uploadRes = UrlFetchApp.fetch(CANVA_API_BASE + "/asset-uploads", {
+    method: "POST",
+    contentType: "application/octet-stream",
     headers: {
-      'Authorization':         'Bearer ' + accessToken,
-      'Asset-Upload-Metadata': metaHeader,
+      Authorization: "Bearer " + accessToken,
+      "Asset-Upload-Metadata": metaHeader,
     },
-    payload:            bytes,
+    payload: bytes,
     muteHttpExceptions: true,
   });
 
-  Logger.log('[upload] status=' + uploadRes.getResponseCode() + ' body=' + uploadRes.getContentText());
+  Logger.log(
+    "[upload] status=" +
+      uploadRes.getResponseCode() +
+      " body=" +
+      uploadRes.getContentText(),
+  );
 
   const uploadData = JSON.parse(uploadRes.getContentText());
   if (!uploadData.job || !uploadData.job.id) {
-    throw new Error('Asset upload failed: ' + uploadRes.getContentText());
+    throw new Error("Asset upload failed: " + uploadRes.getContentText());
   }
 
   // If already succeeded on first response, return immediately
-  if (uploadData.job.status === 'success') return uploadData.job.asset.id;
+  if (uploadData.job.status === "success") return uploadData.job.asset.id;
 
   // Poll GET /asset-uploads/{jobId} until job.status === 'success'
   const jobId = uploadData.job.id;
   for (let i = 0; i < 15; i++) {
     Utilities.sleep(2000);
-    const statusRes = UrlFetchApp.fetch(CANVA_API_BASE + '/asset-uploads/' + jobId, {
-      headers: { 'Authorization': 'Bearer ' + accessToken },
-      muteHttpExceptions: true,
-    });
+    const statusRes = UrlFetchApp.fetch(
+      CANVA_API_BASE + "/asset-uploads/" + jobId,
+      {
+        headers: { Authorization: "Bearer " + accessToken },
+        muteHttpExceptions: true,
+      },
+    );
     const statusData = JSON.parse(statusRes.getContentText());
-    const job        = statusData.job;
-    if (!job) throw new Error('Asset poll error: ' + statusRes.getContentText());
-    if (job.status === 'success') return job.asset.id;
-    if (job.status === 'failed')  throw new Error('Asset import failed for ' + fileName + ': ' + JSON.stringify(job.error));
+    const job = statusData.job;
+    if (!job)
+      throw new Error("Asset poll error: " + statusRes.getContentText());
+    if (job.status === "success") return job.asset.id;
+    if (job.status === "failed")
+      throw new Error(
+        "Asset import failed for " +
+          fileName +
+          ": " +
+          JSON.stringify(job.error),
+      );
   }
-  throw new Error('Asset upload timed out for: ' + fileName);
+  throw new Error("Asset upload timed out for: " + fileName);
 }
 
 /* ─── Autofill ───────────────────────────────────────────────────── */
@@ -603,214 +682,289 @@ function createAutofillJob(brandTemplateId, fieldData, accessToken) {
   // Input: [{name, type, text|asset_id}, ...]
   // Output: { field_name: { type, text|asset_id }, ... }
   const dataObj = {};
-  fieldData.forEach(function(field) {
+  fieldData.forEach(function (field) {
     const val = { type: field.type };
-    if (field.type === 'text')  val.text     = field.text;
-    if (field.type === 'image') val.asset_id = field.asset_id;
+    if (field.type === "text") val.text = field.text;
+    if (field.type === "image") val.asset_id = field.asset_id;
     dataObj[field.name] = val;
   });
 
-  const body = JSON.stringify({ brand_template_id: brandTemplateId, data: dataObj });
-  Logger.log('[autofill] body=' + body);
+  const body = JSON.stringify({
+    brand_template_id: brandTemplateId,
+    data: dataObj,
+  });
+  Logger.log("[autofill] body=" + body);
 
-  const res = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills', {
-    method:      'POST',
-    contentType: 'application/json',
+  const res = UrlFetchApp.fetch(CANVA_API_BASE + "/autofills", {
+    method: "POST",
+    contentType: "application/json",
     headers: {
-      'Authorization': 'Bearer ' + accessToken,
+      Authorization: "Bearer " + accessToken,
     },
-    payload:            body,
+    payload: body,
     muteHttpExceptions: true,
   });
 
-  Logger.log('[autofill] status=' + res.getResponseCode() + ' body=' + res.getContentText());
+  Logger.log(
+    "[autofill] status=" +
+      res.getResponseCode() +
+      " body=" +
+      res.getContentText(),
+  );
 
   const result = JSON.parse(res.getContentText());
-  if (!result.job) throw new Error('Autofill job failed: ' + res.getContentText());
+  if (!result.job)
+    throw new Error("Autofill job failed: " + res.getContentText());
   return result.job.id;
 }
 
 function pollAutofillJob(jobId, accessToken) {
-  let lastBody = '';
+  let lastBody = "";
   for (let i = 0; i < 30; i++) {
     Utilities.sleep(3000);
-    const res  = UrlFetchApp.fetch(CANVA_API_BASE + '/autofills/' + jobId, {
-      headers: { 'Authorization': 'Bearer ' + accessToken },
+    const res = UrlFetchApp.fetch(CANVA_API_BASE + "/autofills/" + jobId, {
+      headers: { Authorization: "Bearer " + accessToken },
       muteHttpExceptions: true,
     });
     lastBody = res.getContentText();
-    Logger.log('[autofill poll ' + i + '] ' + lastBody);
+    Logger.log("[autofill poll " + i + "] " + lastBody);
     const result = JSON.parse(lastBody);
-    const job    = result.job;
-    if (!job) throw new Error('Autofill poll unexpected response: ' + lastBody);
-    if (job.status === 'success') {
+    const job = result.job;
+    if (!job) throw new Error("Autofill poll unexpected response: " + lastBody);
+    if (job.status === "success") {
       // design ID lives at job.result.design.id
       const designId = job.result && job.result.design && job.result.design.id;
-      if (!designId) throw new Error('Autofill success but no design ID. Full response: ' + lastBody);
+      if (!designId)
+        throw new Error(
+          "Autofill success but no design ID. Full response: " + lastBody,
+        );
       return designId;
     }
-    if (job.status === 'failed') throw new Error('Autofill job failed: ' + lastBody);
+    if (job.status === "failed")
+      throw new Error("Autofill job failed: " + lastBody);
   }
-  throw new Error('Autofill timed out. Last response: ' + lastBody);
+  throw new Error("Autofill timed out. Last response: " + lastBody);
 }
 
 /* ─── Export ─────────────────────────────────────────────────────── */
 function exportDesign(designId, accessToken) {
-  const res = UrlFetchApp.fetch(CANVA_API_BASE + '/exports', {
-    method: 'POST',
+  const res = UrlFetchApp.fetch(CANVA_API_BASE + "/exports", {
+    method: "POST",
     headers: {
-      'Authorization': 'Bearer ' + accessToken,
-      'Content-Type':  'application/json',
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json",
     },
-    payload:            JSON.stringify({ design_id: designId, format: { type: 'png' } }),
+    payload: JSON.stringify({ design_id: designId, format: { type: "png" } }),
     muteHttpExceptions: true,
   });
 
   const result = JSON.parse(res.getContentText());
-  if (!result.job || !result.job.id) throw new Error('Export job failed: ' + res.getContentText());
+  if (!result.job || !result.job.id)
+    throw new Error("Export job failed: " + res.getContentText());
   return result.job.id;
 }
 
 function pollExportJob(exportJobId, accessToken) {
-  let lastBody = '';
+  let lastBody = "";
   for (let i = 0; i < 30; i++) {
     Utilities.sleep(3000);
-    const res    = UrlFetchApp.fetch(CANVA_API_BASE + '/exports/' + exportJobId, {
-      headers: { 'Authorization': 'Bearer ' + accessToken },
+    const res = UrlFetchApp.fetch(CANVA_API_BASE + "/exports/" + exportJobId, {
+      headers: { Authorization: "Bearer " + accessToken },
       muteHttpExceptions: true,
     });
     lastBody = res.getContentText();
-    Logger.log('[export poll ' + i + '] ' + lastBody);
+    Logger.log("[export poll " + i + "] " + lastBody);
     const result = JSON.parse(lastBody);
-    const job    = result.job;
-    if (job && job.status === 'success') {
+    const job = result.job;
+    if (job && job.status === "success") {
       // Canva returns URLs directly on job.urls (not job.result.urls)
       const r = job.result || {};
-      const list = job.urls || r.download_list || r.urls || r.export_blobs || [];
+      const list =
+        job.urls || r.download_list || r.urls || r.export_blobs || [];
       if (list && list.length) {
-        return list.map(function(d) { return (typeof d === 'string') ? d : d.url; });
+        return list.map(function (d) {
+          return typeof d === "string" ? d : d.url;
+        });
       }
-      throw new Error('Export succeeded but no download URLs found. Full response: ' + lastBody);
+      throw new Error(
+        "Export succeeded but no download URLs found. Full response: " +
+          lastBody,
+      );
     }
-    if (job && job.status === 'failed') throw new Error('Export job failed: ' + lastBody);
+    if (job && job.status === "failed")
+      throw new Error("Export job failed: " + lastBody);
   }
-  throw new Error('Export job timed out. Last: ' + lastBody);
+  throw new Error("Export job timed out. Last: " + lastBody);
 }
 
 /* ─── Date / Time Formatting ─────────────────────────────────────── */
 function formatEventTime(datetimeLocal) {
   // "2026-02-05T20:00" → "8PM"  |  "2026-02-05T08:30" → "8:30AM"
-  if (!datetimeLocal) return '';
-  const timePart = (datetimeLocal.split('T')[1] || '').substring(0, 5);
-  if (!timePart) return '';
+  if (!datetimeLocal) return "";
+  const timePart = (datetimeLocal.split("T")[1] || "").substring(0, 5);
+  if (!timePart) return "";
 
-  const [h, m]  = timePart.split(':').map(Number);
-  const ampm    = h >= 12 ? 'PM' : 'AM';
-  const hour12  = h % 12 || 12;
-  const minutes = m === 0 ? '' : ':' + String(m).padStart(2, '0');
+  const [h, m] = timePart.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  const minutes = m === 0 ? "" : ":" + String(m).padStart(2, "0");
   return hour12 + minutes + ampm;
 }
 
 function formatTime(timeStr) {
   // Accepts "HH:MM" (from <input type="time">) → "8PM" / "8:30AM"
-  if (!timeStr) return '';
-  const part     = timeStr.includes('T') ? timeStr.split('T')[1] : timeStr;
-  const timePart = (part || '').substring(0, 5);
-  if (!timePart) return '';
+  if (!timeStr) return "";
+  const part = timeStr.includes("T") ? timeStr.split("T")[1] : timeStr;
+  const timePart = (part || "").substring(0, 5);
+  if (!timePart) return "";
 
-  const [h, m]  = timePart.split(':').map(Number);
-  const ampm    = h >= 12 ? 'PM' : 'AM';
-  const hour12  = h % 12 || 12;
-  const minutes = m === 0 ? '' : ':' + String(m).padStart(2, '0');
+  const [h, m] = timePart.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  const minutes = m === 0 ? "" : ":" + String(m).padStart(2, "0");
   return hour12 + minutes + ampm;
 }
 
 function formatOnlineSessionDate(datetimeLocal) {
   // "2026-02-05T20:00" → "KHAMIS, 5 FEBRUARI 2026"
-  if (!datetimeLocal) return '';
-  const datePart = datetimeLocal.split('T')[0];
+  if (!datetimeLocal) return "";
+  const datePart = datetimeLocal.split("T")[0];
   // Construct in UTC to avoid timezone shift
-  const [yr, mo, dy] = datePart.split('-').map(Number);
+  const [yr, mo, dy] = datePart.split("-").map(Number);
   const date = new Date(yr, mo - 1, dy); // local date, no TZ shift
 
-  const DAYS   = ['AHAD','ISNIN','SELASA','RABU','KHAMIS','JUMAAT','SABTU'];
-  const MONTHS = ['JANUARI','FEBRUARI','MAC','APRIL','MEI','JUN',
-                  'JULAI','OGOS','SEPTEMBER','OKTOBER','NOVEMBER','DISEMBER'];
+  const DAYS = ["AHAD", "ISNIN", "SELASA", "RABU", "KHAMIS", "JUMAAT", "SABTU"];
+  const MONTHS = [
+    "JANUARI",
+    "FEBRUARI",
+    "MAC",
+    "APRIL",
+    "MEI",
+    "JUN",
+    "JULAI",
+    "OGOS",
+    "SEPTEMBER",
+    "OKTOBER",
+    "NOVEMBER",
+    "DISEMBER",
+  ];
 
-  return DAYS[date.getDay()] + ', ' + dy + ' ' + MONTHS[mo - 1] + ' ' + yr;
+  return DAYS[date.getDay()] + ", " + dy + " " + MONTHS[mo - 1] + " " + yr;
 }
 
 /* ─── Main Poster Generator ──────────────────────────────────────── */
 function handleGeneratePoster(data) {
-  const photoUrls    = (data.photoUrls || []).filter(u => u);
+  const photoUrls = (data.photoUrls || []).filter((u) => u);
   const teacherCount = photoUrls.length;
-  if (teacherCount === 0) throw new Error('No teacher photos provided.');
+  if (teacherCount === 0) throw new Error("No teacher photos provided.");
 
-  const templateId = CANVA_TEMPLATES[teacherCount];
+  const speaker        = data.speaker || 'zulfaqar';
+  const speakerTemplates = CANVA_TEMPLATES[speaker];
+  if (!speakerTemplates) throw new Error('Unknown speaker: ' + speaker);
+  const templateId = speakerTemplates[teacherCount];
   if (!templateId) throw new Error(
-    'No Canva template configured for ' + teacherCount + ' teacher(s). ' +
+    'No Canva template configured for speaker "' + speaker + '" with ' + teacherCount + ' teacher(s). ' +
     'Please add the Brand Template ID to CANVA_TEMPLATES in Code.gs.'
   );
 
   const accessToken = getCanvaAccessToken();
   if (!accessToken) return { needsAuth: true, authUrl: getCanvaAuthUrl() };
 
-  const names     = data.teacherNames     || [];
+  const names = data.teacherNames || [];
   const positions = data.teacherPositions || [];
-  const titles    = data.teacherTitles    || [];
+  const titles = data.teacherTitles || [];
 
   // Build Canva autofill field data — must be an array of { name, type, ... } objects
   const fieldData = [
-    { name: 'school_name',         type: 'text', text: data.schoolName    || '' },
-    { name: 'subtext',             type: 'text', text: data.subTextPoster || '' },
-    { name: 'online_session_date', type: 'text', text: formatOnlineSessionDate(data.onlineSessionDate) },
-    { name: 'online_session_time', type: 'text', text: formatTime(data.onlineSessionTime) },
+    { name: "school_name", type: "text", text: data.schoolName || "" },
+    { name: "subtext", type: "text", text: data.subTextPoster || "" },
+    {
+      name: "online_session_date",
+      type: "text",
+      text: formatOnlineSessionDate(data.onlineSessionDate),
+    },
+    {
+      name: "online_session_time",
+      type: "text",
+      text: formatTime(data.onlineSessionTime),
+    },
   ];
 
   // Upload each teacher photo to Canva and add teacher fields
   for (let i = 0; i < teacherCount; i++) {
-    const n      = i + 1;
-    const match  = photoUrls[i].match(/\/d\/([a-zA-Z0-9_-]+)\//);
-    if (!match) throw new Error('Cannot parse Drive file ID from: ' + photoUrls[i]);
+    const n = i + 1;
+    const match = photoUrls[i].match(/\/d\/([a-zA-Z0-9_-]+)\//);
+    if (!match)
+      throw new Error("Cannot parse Drive file ID from: " + photoUrls[i]);
 
-    const assetId = uploadAssetToCanva(match[1], 'teacher_' + n + '.jpg', accessToken);
-    fieldData.push({ name: 'teacher_' + n + '_photo',    type: 'image', asset_id: assetId });
-    fieldData.push({ name: 'teacher_' + n + '_name',     type: 'text',  text: names[i]     || '' });
-    fieldData.push({ name: 'teacher_' + n + '_position', type: 'text',  text: positions[i] || '' });
-    fieldData.push({ name: 'teacher_' + n + '_title',    type: 'text',  text: titles[i]    || '' });
+    const assetId = uploadAssetToCanva(
+      match[1],
+      "teacher_" + n + ".jpg",
+      accessToken,
+    );
+    fieldData.push({
+      name: "teacher_" + n + "_photo",
+      type: "image",
+      asset_id: assetId,
+    });
+    fieldData.push({
+      name: "teacher_" + n + "_name",
+      type: "text",
+      text: names[i] || "",
+    });
+    fieldData.push({
+      name: "teacher_" + n + "_position",
+      type: "text",
+      text: positions[i] || "",
+    });
+    fieldData.push({
+      name: "teacher_" + n + "_title",
+      type: "text",
+      text: titles[i] || "",
+    });
   }
 
   // Autofill → get design ID
   const autofillJobId = createAutofillJob(templateId, fieldData, accessToken);
-  const designId      = pollAutofillJob(autofillJobId, accessToken);
+  const designId = pollAutofillJob(autofillJobId, accessToken);
 
   // Export design → download URLs
-  const exportJobId   = exportDesign(designId, accessToken);
-  const exportedUrls  = pollExportJob(exportJobId, accessToken);
-  if (!exportedUrls || !exportedUrls.length) throw new Error('No export URLs returned.');
+  const exportJobId = exportDesign(designId, accessToken);
+  const exportedUrls = pollExportJob(exportJobId, accessToken);
+  if (!exportedUrls || !exportedUrls.length)
+    throw new Error("No export URLs returned.");
 
   // Download poster and save to Drive in school folder
-  const posterBlob = UrlFetchApp.fetch(exportedUrls[0]).getBlob()
-    .setName('PST_Poster_' + sanitizeFolderName(data.schoolName) + '.png');
+  const posterBlob = UrlFetchApp.fetch(exportedUrls[0])
+    .getBlob()
+    .setName("PST_Poster_" + sanitizeFolderName(data.schoolName) + ".png");
 
-  const root         = getOrCreateFolder(FOLDER_NAME);
-  const photosDir    = getOrCreateSubfolder(root, PHOTOS_FOLDER);
-  const schoolFolder = getOrCreateSubfolder(photosDir, sanitizeFolderName(data.schoolName));
-  const posterFile   = schoolFolder.createFile(posterBlob);
-  try { posterFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (_) {}
+  const root = getOrCreateFolder(FOLDER_NAME);
+  const photosDir = getOrCreateSubfolder(root, PHOTOS_FOLDER);
+  const schoolFolder = getOrCreateSubfolder(
+    photosDir,
+    sanitizeFolderName(data.schoolName),
+  );
+  const posterFile = schoolFolder.createFile(posterBlob);
+  try {
+    posterFile.setSharing(
+      DriveApp.Access.ANYONE_WITH_LINK,
+      DriveApp.Permission.VIEW,
+    );
+  } catch (_) {}
 
-  const id       = posterFile.getId();
-  const viewUrl  = 'https://drive.google.com/file/d/' + id + '/view';
+  const id = posterFile.getId();
+  const viewUrl = "https://drive.google.com/file/d/" + id + "/view";
 
   // Write poster link back into the sheet row
   try {
     updatePosterLink(data.rowNumber, viewUrl);
   } catch (e) {
-    Logger.log('[posterLink] failed: ' + e.toString());
+    Logger.log("[posterLink] failed: " + e.toString());
   }
 
   return {
-    driveViewUrl:     viewUrl,
-    driveDownloadUrl: 'https://drive.google.com/uc?export=download&id=' + id,
+    driveViewUrl: viewUrl,
+    driveDownloadUrl: "https://drive.google.com/uc?export=download&id=" + id,
   };
 }

@@ -47,6 +47,7 @@ const posterErrorText      = document.getElementById('posterErrorText');
 
 let successDismissTimer  = null;
 let posterGenerationData = null; // stored after successful form submit
+let selectedSpeaker      = 'zulfaqar'; // default speaker
 
 newSubmissionBtn.addEventListener('click', () => {
   if (window.confirm('Start a new submission? The page will reload and the form will be reset.')) {
@@ -171,6 +172,15 @@ function onPosterDownloaded() {
   // Show WhatsApp button
   btnWhatsApp.classList.remove('hidden');
 }
+
+/* ─── Speaker Selection ─────────────────────────────────────────── */
+document.querySelectorAll('.btn-speaker').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-speaker').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSpeaker = btn.dataset.speaker;
+  });
+});
 
 /* ─── Image Guideline → Upload reveal ───────────────────────────── */
 document.getElementById('btnGuidelineNext').addEventListener('click', () => {
@@ -664,7 +674,7 @@ pstForm.addEventListener('submit', async (e) => {
     /* ── Enable Generate Poster ── */
     posterGenerationData = {
       schoolName, eventTime, eventLocation, onlineSessionDate, onlineSessionTime,
-      subTextPoster, teacherNames, teacherPositions, teacherTitles, photoUrls,
+      subTextPoster, speaker: selectedSpeaker, teacherNames, teacherPositions, teacherTitles, photoUrls,
       rowNumber: sheetResult.rowNumber,
     };
     btnGeneratePoster.disabled = false;

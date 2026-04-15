@@ -807,6 +807,58 @@ input[type="text"]::placeholder {
   letter-spacing: .5px;
 }
 
+/* ─── Speaker Selection ─────────────────────────────────────────── */
+.speaker-btn-group {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.btn-speaker {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  position: relative;
+}
+
+.btn-speaker:hover:not(:disabled) {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+.btn-speaker.active {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+.btn-speaker:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.btn-speaker .badge-soon {
+  font-size: .6rem;
+  font-weight: 700;
+  background: var(--border);
+  color: var(--text-muted, #64748b);
+  padding: .1rem .35rem;
+  border-radius: 4px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
 /* ─── Poster Panel ──────────────────────────────────────────────── */
 .poster-panel {
   margin: 0 2rem 1.5rem;
