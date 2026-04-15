@@ -41,7 +41,8 @@ const CANVA_SCOPE     = 'asset:write asset:read design:content:write design:cont
 const CANVA_TEMPLATES = {
   1: 'EAHGzdJTPio',
   2: 'EAHG45Ty9JE',
-  // 3: 'TEMPLATE_ID_FOR_3',
+  3: 'EAHG5GsMHLo',
+  // 4: 'TEMPLATE_ID_FOR_4',
   // ...
 };
 
