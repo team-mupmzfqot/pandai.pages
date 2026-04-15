@@ -160,18 +160,19 @@ function appendRow(data) {
   const urls      = data.photoUrls        || [];
 
   // Col 1:    Timestamp
-  // Cols 2-5: Event Details (School, Time, Location, Online Session Date)
-  // Col 6:    Sub Text Poster
-  // Col 7:    Poster Link (filled when poster is generated)
-  // Cols 8+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
-  const TOTAL_COLS = 7 + MAX_TEACHERS * 4; // 47 cols
+  // Cols 2-6: Event Details (School, Time, Location, Online Session Date, Online Session Time)
+  // Col 7:    Sub Text Poster
+  // Col 8:    Poster Link (filled when poster is generated)
+  // Cols 9+:  Teacher quadruplets — Name | Position | Title | Photo (×10)
+  const TOTAL_COLS = 8 + MAX_TEACHERS * 4; // 48 cols
   const row = [
     new Date(),
-    data.schoolName        || '',
-    data.eventTime         || '',
-    data.eventLocation     || '',
-    data.onlineSessionDate || '',
-    data.subTextPoster     || '',
+    data.schoolName         || '',
+    data.eventTime          || '',
+    data.eventLocation      || '',
+    data.onlineSessionDate  || '',
+    data.onlineSessionTime  || '',
+    data.subTextPoster      || '',
     '',  // Poster Link — filled later
   ];
 
@@ -189,11 +190,11 @@ function appendRow(data) {
        .setVerticalAlignment('middle');
 
   // Make photo URL cells into clickable hyperlinks
-  // Photo col (1-based) for teacher i: 8 + i*4 + 3
+  // Photo col (1-based) for teacher i: 9 + i*4 + 3
   for (let i = 0; i < MAX_TEACHERS; i++) {
     const url = urls[i];
     if (url) {
-      const col  = 8 + i * 4 + 3;
+      const col  = 9 + i * 4 + 3;
       const cell = sheet.getRange(lastRow, col);
       const richText = SpreadsheetApp.newRichTextValue()
         .setText('View Photo')
@@ -231,19 +232,19 @@ function getOrCreateSheet() {
 function buildSheetStructure(sheet) {
   sheet.setName('Submissions');
 
-  // Col 1: Timestamp | Cols 2-5: Event Details | Col 6: Poster Detail
-  // Cols 7-(6+MAX_TEACHERS*4): Teacher quadruplets | Last col: Meta
-  const TOTAL_COLS = 7 + MAX_TEACHERS * 4; // 47 cols for 10 teachers
+  // Col 1: Timestamp | Cols 2-6: Event Details | Cols 7-8: Poster Detail
+  // Cols 9+: Teacher quadruplets (Name, Position, Title, Photo ×10)
+  const TOTAL_COLS = 8 + MAX_TEACHERS * 4; // 48 cols for 10 teachers
 
   /* ── Row 1: Group header labels ── */
   const groupLabels = [
     // [label, startCol, spanCols, bgColor]
     ['Submission',    1, 1, CLR_SUBMISSION],
-    ['Event Details', 2, 4, CLR_EVENT],
-    ['Poster Detail', 6, 2, CLR_META],   // spans Sub Text Poster (col 6) + Poster Link (col 7)
+    ['Event Details', 2, 5, CLR_EVENT],        // cols 2-6: School, Time, Location, Date, Time
+    ['Poster Detail', 7, 2, CLR_META],         // cols 7-8: Sub Text Poster + Poster Link
   ];
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    const col = 8 + i * 4;               // teacher groups now start at col 8
+    const col = 9 + i * 4;                    // teacher groups start at col 9
     const clr = i % 2 === 0 ? CLR_TEACHER_ODD : CLR_TEACHER_EVN;
     groupLabels.push([`Teacher ${i + 1}`, col, 4, clr]);
   }
@@ -267,13 +268,14 @@ function buildSheetStructure(sheet) {
     'Event Time',
     'Event Location',
     'Online Session Date',
+    'Online Session Time',
     'Sub Text Poster',
+    'Poster Link',
   ];
   // Teacher columns: group header already says "Teacher N", so keep sub-headers short
   for (let i = 1; i <= MAX_TEACHERS; i++) {
     colHeaders.push('Name', 'Position', 'Title', 'Photo');
   }
-  colHeaders.push('Poster Link'); // col 7 — no Submitted At (Timestamp already covers it)
 
   const headerRow = sheet.getRange(2, 1, 1, TOTAL_COLS);
   headerRow.setValues([colHeaders])
@@ -298,13 +300,14 @@ function buildSheetStructure(sheet) {
   sheet.setColumnWidth(3, 150);  // Event Time
   sheet.setColumnWidth(4, 180);  // Event Location
   sheet.setColumnWidth(5, 150);  // Online Session Date
-  sheet.setColumnWidth(6, 220);  // Sub Text Poster
-  sheet.setColumnWidth(7, 200);  // Poster Link
+  sheet.setColumnWidth(6, 120);  // Online Session Time
+  sheet.setColumnWidth(7, 220);  // Sub Text Poster
+  sheet.setColumnWidth(8, 200);  // Poster Link
   for (let i = 0; i < MAX_TEACHERS; i++) {
-    sheet.setColumnWidth(8 + i * 4,     150);  // Name
-    sheet.setColumnWidth(8 + i * 4 + 1, 180);  // Position (can be long)
-    sheet.setColumnWidth(8 + i * 4 + 2,  80);  // Title (short: Cikgu, Dr.)
-    sheet.setColumnWidth(8 + i * 4 + 3,  90);  // Photo
+    sheet.setColumnWidth(9 + i * 4,     150);  // Name
+    sheet.setColumnWidth(9 + i * 4 + 1, 180);  // Position (can be long)
+    sheet.setColumnWidth(9 + i * 4 + 2,  80);  // Title (short: Cikgu, Dr.)
+    sheet.setColumnWidth(9 + i * 4 + 3,  90);  // Photo
   }
 
   /* ── Row heights ── */
@@ -319,7 +322,7 @@ function buildSheetStructure(sheet) {
 function updatePosterLink(rowNumber, posterUrl) {
   if (!rowNumber) return;
   const sheet      = getOrCreateSheet();
-  const POSTER_COL = 7; // col 7 — right after Event Details
+  const POSTER_COL = 8; // col 8 — right after Sub Text Poster
   const cell       = sheet.getRange(rowNumber, POSTER_COL);
   const richText   = SpreadsheetApp.newRichTextValue()
     .setText('View Poster')
@@ -705,6 +708,20 @@ function formatEventTime(datetimeLocal) {
   return hour12 + minutes + ampm;
 }
 
+function formatTime(timeStr) {
+  // Accepts "HH:MM" (from <input type="time">) → "8PM" / "8:30AM"
+  if (!timeStr) return '';
+  const part     = timeStr.includes('T') ? timeStr.split('T')[1] : timeStr;
+  const timePart = (part || '').substring(0, 5);
+  if (!timePart) return '';
+
+  const [h, m]  = timePart.split(':').map(Number);
+  const ampm    = h >= 12 ? 'PM' : 'AM';
+  const hour12  = h % 12 || 12;
+  const minutes = m === 0 ? '' : ':' + String(m).padStart(2, '0');
+  return hour12 + minutes + ampm;
+}
+
 function formatOnlineSessionDate(datetimeLocal) {
   // "2026-02-05T20:00" → "KHAMIS, 5 FEBRUARI 2026"
   if (!datetimeLocal) return '';
@@ -743,8 +760,8 @@ function handleGeneratePoster(data) {
   const fieldData = [
     { name: 'school_name',         type: 'text', text: data.schoolName    || '' },
     { name: 'subtext',             type: 'text', text: data.subTextPoster || '' },
-    { name: 'event_time',          type: 'text', text: formatEventTime(data.eventTime) },
     { name: 'online_session_date', type: 'text', text: formatOnlineSessionDate(data.onlineSessionDate) },
+    { name: 'online_session_time', type: 'text', text: formatTime(data.onlineSessionTime) },
   ];
 
   // Upload each teacher photo to Canva and add teacher fields

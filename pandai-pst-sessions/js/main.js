@@ -530,6 +530,7 @@ pstForm.addEventListener('submit', async (e) => {
   const eventTime         = document.getElementById('eventTime').value;
   const eventLocation     = document.getElementById('eventLocation').value.trim();
   const onlineSessionDate = document.getElementById('onlineSessionDate').value;
+  const onlineSessionTime = document.getElementById('onlineSessionTime').value;
   const subTextPoster     = document.getElementById('subTextPoster').value.trim();
   const teacherNames      = getTeacherNames();
   const teacherPositions  = getTeacherPositions();
@@ -580,6 +581,12 @@ pstForm.addEventListener('submit', async (e) => {
     return;
   }
 
+  if (!onlineSessionTime) {
+    showStatus('Please select the online session time.', 'error');
+    document.getElementById('onlineSessionTime').focus();
+    return;
+  }
+
   if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
     showStatus('Google Apps Script URL not configured. Please update js/config.js.', 'error');
     return;
@@ -615,6 +622,7 @@ pstForm.addEventListener('submit', async (e) => {
       eventTime,
       eventLocation,
       onlineSessionDate,
+      onlineSessionTime,
       subTextPoster,
       teacherNames,
       teacherPositions,
@@ -649,7 +657,7 @@ pstForm.addEventListener('submit', async (e) => {
 
     /* ── Enable Generate Poster ── */
     posterGenerationData = {
-      schoolName, eventTime, eventLocation, onlineSessionDate,
+      schoolName, eventTime, eventLocation, onlineSessionDate, onlineSessionTime,
       subTextPoster, teacherNames, teacherPositions, teacherTitles, photoUrls,
       rowNumber: sheetResult.rowNumber,
     };
