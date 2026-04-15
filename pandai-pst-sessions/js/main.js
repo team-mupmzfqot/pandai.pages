@@ -172,6 +172,12 @@ function onPosterDownloaded() {
   btnWhatsApp.classList.remove('hidden');
 }
 
+/* ─── Image Guideline → Upload reveal ───────────────────────────── */
+document.getElementById('btnGuidelineNext').addEventListener('click', () => {
+  document.getElementById('imageGuidelinePanel').classList.add('hidden');
+  document.getElementById('uploadArea').classList.remove('hidden');
+});
+
 /* ─── File Selection ─────────────────────────────────────────────── */
 photoUpload.addEventListener('change', handleFileSelect);
 

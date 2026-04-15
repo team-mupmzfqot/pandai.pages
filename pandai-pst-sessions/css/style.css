@@ -202,6 +202,63 @@ input[type="text"]::placeholder {
   color: #b0b7c3;
 }
 
+/* ─── Image Guideline Panel ──────────────────────────────────────── */
+.guideline-image-wrap {
+  width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--green-light);
+  border: 1.5px solid var(--border);
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guideline-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Fallback when image hasn't been added yet */
+.guideline-img[src$="image-guideline.png"]:not([complete]),
+.guideline-img:not([src]),
+.guideline-img[src=""] {
+  min-height: 200px;
+}
+
+.guideline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.btn-guideline-next {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem 1.4rem;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+
+.btn-guideline-next:hover {
+  background: var(--green-dark);
+}
+
+.btn-guideline-next:active {
+  transform: scale(.97);
+}
+
 /* ─── Upload Zone ───────────────────────────────────────────────── */
 .upload-zone {
   position: relative;
