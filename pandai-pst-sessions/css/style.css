@@ -59,7 +59,7 @@ body {
   max-width: 780px;
   margin: 0 auto;
   background: var(--card-bg);
-  border-radius: 0 0 var(--radius) var(--radius);
+  border-radius: 0;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
@@ -68,7 +68,6 @@ body {
 .form-header {
   padding: 0;
   overflow: hidden;
-  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .header-banner {
