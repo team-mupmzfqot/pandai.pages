@@ -40,7 +40,7 @@ const CANVA_SCOPE     = 'asset:write asset:read design:content:write design:cont
 // Brand Template IDs by teacher count — add IDs as templates are created in Canva
 const CANVA_TEMPLATES = {
   1: 'EAHGzdJTPio',
-  // 2: 'TEMPLATE_ID_FOR_2',
+  2: 'EAHG45Ty9JE',
   // 3: 'TEMPLATE_ID_FOR_3',
   // ...
 };
