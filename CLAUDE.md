@@ -46,6 +46,8 @@ Layout v4: 47 cols total
 - Image guideline step before upload
   - "Optimize My Image" button → opens n8n form (https://n8n.pandai.org/form/d7345732-b411-4389-96fe-da3475d01cad) in a floating PiP overlay (bottom-right, closeable)
   - "Check Optimized Image" button → opens Drive folder in new tab
+  - PiP status bar polls Apps Script every 5s; auto-transitions to pending after 6s; shows ✅ Done + View Image when n8n callback fires
+- Assets served from Cloudflare Images CDN (header = Header PST_v3.png, guideline, success GIF)
 - Speaker selection (Zulfaqar selected by default; Cikgu Wan marked SOON)
 - Apps Script: sheet write, Drive photo upload, Canva autofill + export, poster saved to Drive
 - Canva template IDs for Zulfaqar: 1–6 teachers
