@@ -98,7 +98,7 @@ function stopOptimizerPolling() {
 async function pollOptimizerStatus() {
   try {
     const res = await fetch(
-      `${APPS_SCRIPT_URL}?action=optimizerStatus&since=${pipOpenedAt}`,
+      `${CONFIG.APPS_SCRIPT_URL}?action=optimizerStatus&since=${pipOpenedAt}`,
       { cache: 'no-store' }
     );
     const data = await res.json();
