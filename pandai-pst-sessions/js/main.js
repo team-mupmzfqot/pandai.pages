@@ -82,7 +82,12 @@ pipClose.addEventListener('click', () => {
 
 function startOptimizerPolling() {
   stopOptimizerPolling();
-  // First poll after 8s (give user time to fill and submit the form)
+  // Auto-switch to "processing" after 6s — enough time to fill + submit the form
+  setTimeout(() => {
+    if (pipStatusDot.classList.contains('idle')) {
+      setPipStatus('pending', 'Processing your image…');
+    }
+  }, 6000);
   pipPollInterval = setInterval(pollOptimizerStatus, 5000);
 }
 
@@ -104,11 +109,6 @@ async function pollOptimizerStatus() {
       if (data.fileLink) {
         pipStatusLink.href = data.fileLink;
         pipStatusLink.classList.remove('hidden');
-      }
-    } else {
-      // Only flip to "processing" after the first poll to avoid premature state
-      if (pipStatusDot.classList.contains('idle')) {
-        setPipStatus('pending', 'Waiting for form submission…');
       }
     }
   } catch (_) {
