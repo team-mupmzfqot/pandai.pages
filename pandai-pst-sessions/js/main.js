@@ -105,11 +105,9 @@ async function pollOptimizerStatus() {
 
     if (data.status === 'done') {
       stopOptimizerPolling();
-      setPipStatus('done', `Done! "${data.teacherName}" image is ready.`);
-      if (data.fileLink) {
-        pipStatusLink.href = data.fileLink;
-        pipStatusLink.classList.remove('hidden');
-      }
+      setPipStatus('done', 'Done! Your optimized image is ready.');
+      pipStatusLink.href = CHECK_IMAGE_URL;
+      pipStatusLink.classList.remove('hidden');
     }
   } catch (_) {
     // Silently swallow network errors — keep polling

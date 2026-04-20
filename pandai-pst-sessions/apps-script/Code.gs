@@ -980,13 +980,13 @@ function handleGeneratePoster(data) {
 
 /* ─── Image Optimizer Status ─────────────────────────────────────── */
 function handleOptimizerCallback(data) {
-  const ss = getOrCreateOptimizerSheet();
-  ss.appendRow([
-    new Date(),
-    data.teacherName || "",
-    data.status || "done",
-    data.fileLink || "",
-  ]);
+  const sheet = getOrCreateOptimizerSheet();
+  const row = sheet.getLastRow() + 1;
+  sheet.appendRow([new Date(), "", data.status || "done", data.fileLink || ""]);
+  // Set teacher name cell as plain text BEFORE writing to prevent formula evaluation
+  const nameCell = sheet.getRange(row, 2);
+  nameCell.setNumberFormat("@");
+  nameCell.setValue(data.teacherName || "");
   return respond(true, "Optimizer status recorded.");
 }
 
