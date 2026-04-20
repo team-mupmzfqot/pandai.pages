@@ -45,6 +45,29 @@ const btnRegeneratePoster  = document.getElementById('btnRegeneratePoster');
 const btnRetryPoster       = document.getElementById('btnRetryPoster');
 const posterErrorText      = document.getElementById('posterErrorText');
 
+const btnOptimizeImage     = document.getElementById('btnOptimizeImage');
+const btnCheckImage        = document.getElementById('btnCheckImage');
+const pipOverlay           = document.getElementById('pipOverlay');
+const pipFrame             = document.getElementById('pipFrame');
+const pipClose             = document.getElementById('pipClose');
+
+const OPTIMIZE_URL    = 'https://n8n.pandai.org/form/d7345732-b411-4389-96fe-da3475d01cad';
+const CHECK_IMAGE_URL = 'https://drive.google.com/drive/folders/1HfvIJXcv-qXOJM886tJADMZ-s4fo0khz?usp=sharing';
+
+btnOptimizeImage.addEventListener('click', () => {
+  pipFrame.src = OPTIMIZE_URL;
+  pipOverlay.classList.remove('hidden');
+});
+
+btnCheckImage.addEventListener('click', () => {
+  window.open(CHECK_IMAGE_URL, '_blank', 'noopener,noreferrer');
+});
+
+pipClose.addEventListener('click', () => {
+  pipOverlay.classList.add('hidden');
+  pipFrame.src = '';
+});
+
 let successDismissTimer  = null;
 let posterGenerationData = null; // stored after successful form submit
 let selectedSpeaker      = 'zulfaqar'; // default speaker
