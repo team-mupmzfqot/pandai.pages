@@ -50,13 +50,22 @@ const btnCheckImage        = document.getElementById('btnCheckImage');
 const pipOverlay           = document.getElementById('pipOverlay');
 const pipFrame             = document.getElementById('pipFrame');
 const pipClose             = document.getElementById('pipClose');
+const pipStatusDot         = document.getElementById('pipStatusDot');
+const pipStatusText        = document.getElementById('pipStatusText');
+const pipStatusLink        = document.getElementById('pipStatusLink');
 
 const OPTIMIZE_URL    = 'https://n8n.pandai.org/form/d7345732-b411-4389-96fe-da3475d01cad';
 const CHECK_IMAGE_URL = 'https://drive.google.com/drive/folders/1HfvIJXcv-qXOJM886tJADMZ-s4fo0khz?usp=sharing';
 
+let pipOpenedAt      = null;
+let pipPollInterval  = null;
+
 btnOptimizeImage.addEventListener('click', () => {
   pipFrame.src = OPTIMIZE_URL;
   pipOverlay.classList.remove('hidden');
+  pipOpenedAt = Date.now();
+  setPipStatus('idle', 'Submit the form above to begin optimization.');
+  startOptimizerPolling();
 });
 
 btnCheckImage.addEventListener('click', () => {
@@ -66,7 +75,51 @@ btnCheckImage.addEventListener('click', () => {
 pipClose.addEventListener('click', () => {
   pipOverlay.classList.add('hidden');
   pipFrame.src = '';
+  stopOptimizerPolling();
+  setPipStatus('idle', 'Submit the form above to begin optimization.');
+  pipStatusLink.classList.add('hidden');
 });
+
+function startOptimizerPolling() {
+  stopOptimizerPolling();
+  // First poll after 8s (give user time to fill and submit the form)
+  pipPollInterval = setInterval(pollOptimizerStatus, 5000);
+}
+
+function stopOptimizerPolling() {
+  if (pipPollInterval) { clearInterval(pipPollInterval); pipPollInterval = null; }
+}
+
+async function pollOptimizerStatus() {
+  try {
+    const res = await fetch(
+      `${APPS_SCRIPT_URL}?action=optimizerStatus&since=${pipOpenedAt}`,
+      { cache: 'no-store' }
+    );
+    const data = await res.json();
+
+    if (data.status === 'done') {
+      stopOptimizerPolling();
+      setPipStatus('done', `Done! "${data.teacherName}" image is ready.`);
+      if (data.fileLink) {
+        pipStatusLink.href = data.fileLink;
+        pipStatusLink.classList.remove('hidden');
+      }
+    } else {
+      // Only flip to "processing" after the first poll to avoid premature state
+      if (pipStatusDot.classList.contains('idle')) {
+        setPipStatus('pending', 'Waiting for form submission…');
+      }
+    }
+  } catch (_) {
+    // Silently swallow network errors — keep polling
+  }
+}
+
+function setPipStatus(state, text) {
+  pipStatusDot.className = 'pip-status-dot ' + state;
+  pipStatusText.textContent = text;
+}
 
 let successDismissTimer  = null;
 let posterGenerationData = null; // stored after successful form submit

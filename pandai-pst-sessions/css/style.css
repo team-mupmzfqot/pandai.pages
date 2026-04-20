@@ -1087,6 +1087,54 @@ input[type="text"]::placeholder {
   border: none;
 }
 
+.pip-footer {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem 1rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: .78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pip-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+
+.pip-status-dot.pending  { background: var(--warning); }
+.pip-status-dot.done     { background: var(--green); }
+.pip-status-dot.idle     { background: var(--border); }
+
+@keyframes pipPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+.pip-status-dot.pending { animation: pipPulse 1.4s ease-in-out infinite; }
+
+.pip-status-link {
+  margin-left: auto;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: .2rem .5rem;
+  border-radius: var(--radius-xs);
+  background: var(--green-light);
+  border: 1px solid rgba(0,204,133,.3);
+  transition: background .15s;
+}
+
+.pip-status-link:hover { background: rgba(0,204,133,.2); }
+
 /* ─── Utilities ─────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 

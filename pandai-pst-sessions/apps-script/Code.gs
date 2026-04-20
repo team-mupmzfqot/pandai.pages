@@ -88,6 +88,10 @@ function doGet(e) {
           "</body></html>",
       );
     }
+    // Optimizer status polling from the frontend
+    if (e.parameter.action === "optimizerStatus") {
+      return getOptimizerStatus(e.parameter.since);
+    }
   }
   return respond(
     true,
@@ -140,6 +144,11 @@ function doPost(e) {
       const redirectUri = getRedirectUri();
       const rawUrl = ScriptApp.getService().getUrl();
       return respond(true, "Debug info", { redirectUri, rawUrl });
+    }
+
+    // Callback from n8n when image optimization workflow completes
+    if (data.action === "optimizer_callback") {
+      return handleOptimizerCallback(data);
     }
 
     return respond(false, "Unknown action.");
@@ -967,4 +976,77 @@ function handleGeneratePoster(data) {
     driveViewUrl: viewUrl,
     driveDownloadUrl: "https://drive.google.com/uc?export=download&id=" + id,
   };
+}
+
+/* ─── Image Optimizer Status ─────────────────────────────────────── */
+function handleOptimizerCallback(data) {
+  const ss = getOrCreateOptimizerSheet();
+  ss.appendRow([
+    new Date(),
+    data.teacherName || "",
+    data.status || "done",
+    data.fileLink || "",
+  ]);
+  return respond(true, "Optimizer status recorded.");
+}
+
+function getOptimizerStatus(since) {
+  const ss = getOrCreateOptimizerSheet();
+  const lastRow = ss.getLastRow();
+
+  // No entries yet
+  if (lastRow < 2) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "pending" })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const rows = ss.getRange(2, 1, lastRow - 1, 4).getValues();
+  const sinceDate = since ? new Date(Number(since)) : new Date(0);
+
+  // Walk backwards — return the most recent 'done' entry after `since`
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const [timestamp, teacherName, status, fileLink] = rows[i];
+    if (new Date(timestamp) > sinceDate && status === "done") {
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          status: "done",
+          teacherName: teacherName,
+          fileLink: fileLink,
+          timestamp: new Date(timestamp).getTime(),
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  return ContentService.createTextOutput(
+    JSON.stringify({ status: "pending" })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getOrCreateOptimizerSheet() {
+  const folder = getOrCreateFolder(FOLDER_NAME);
+  const files = folder.getFilesByName(SHEET_NAME);
+  let ss;
+  if (files.hasNext()) {
+    ss = SpreadsheetApp.open(files.next());
+  } else {
+    // PST Sessions sheet doesn't exist yet — create it first via normal path
+    ss = SpreadsheetApp.create(SHEET_NAME);
+    const file = DriveApp.getFileById(ss.getId());
+    folder.addFile(file);
+    DriveApp.getRootFolder().removeFile(file);
+  }
+
+  let sheet = ss.getSheetByName("Optimizer Status");
+  if (!sheet) {
+    sheet = ss.insertSheet("Optimizer Status");
+    sheet.appendRow(["Timestamp", "Teacher Name", "Status", "File Link"]);
+    sheet.getRange(1, 1, 1, 4)
+      .setBackground(CLR_SUBMISSION)
+      .setFontColor(CLR_WHITE)
+      .setFontWeight("bold");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
