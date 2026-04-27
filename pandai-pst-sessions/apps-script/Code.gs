@@ -27,7 +27,7 @@
 const FOLDER_NAME = "PST-Sheets";
 const PHOTOS_FOLDER = "Photos";
 const SHEET_NAME = "PST Sessions";
-const MAX_TEACHERS = 10;
+const MAX_TEACHERS = 11;
 
 /* ─── Canva Config ───────────────────────────────────────────────── */
 // Client ID (public). Client Secret stored in Script Properties → CANVA_CLIENT_SECRET
@@ -47,8 +47,11 @@ const CANVA_TEMPLATES = {
     4: 'EAHG5PBmPkM',
     5: 'EAHG5p8a5zw',
     6: 'EAHG5nQDKCo',
-    // 7: 'TEMPLATE_ID_FOR_7',
-    // ...
+    7: 'EAHHolrI7yg',
+    8: 'EAHHpJ_1LIQ',
+    9: 'EAHHp2fVNXc',
+    10: 'EAHHyvpmrLc',
+    11: 'EAHHyvt4Mt4',
   },
   cikgu_wan: {
     // Templates will be added when ready

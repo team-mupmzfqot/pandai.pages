@@ -1,5 +1,5 @@
 /* ─── State ──────────────────────────────────────────────────────── */
-const MAX_PHOTOS = 10;
+const MAX_PHOTOS = 11;
 let uploadedFiles   = [];   // { file: File, dataUrl: string }[]
 let isSubmitting    = false;
 let dragSrcIndex    = null;
